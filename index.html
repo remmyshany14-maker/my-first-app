@@ -198,15 +198,34 @@ body.editing-entry #editorView{min-height:100dvh;display:block;padding:calc(8px 
       renderHome();renderList();renderCategories();renderWriter();renderSettings();
     }finally{cloudApplying=false}
   }
-  function mergePayloads(localValue,remoteValue){
-    const a=normalizePayload(localValue),b=normalizePayload(remoteValue),entries=new Map(),works=new Map();
+  function mergePayloads(localValue,remoteValue,baselineValue=null){
+    const a=normalizePayload(localValue),b=normalizePayload(remoteValue),base=baselineValue?normalizePayload(baselineValue):null;
+    const entries=new Map(),works=new Map();
     [...a.entries,...b.entries].forEach(e=>{const old=entries.get(e.id);if(!old||(e.updatedAt||e.createdAt||"")>=(old.updatedAt||old.createdAt||""))entries.set(e.id,{...e})});
+    // For items that existed in the last common snapshot, absence on either side means
+    // a deletion. This avoids resurrecting deleted entries during conflict merges.
+    if(base){const presentA=new Set(a.entries.map(e=>e.id)),presentB=new Set(b.entries.map(e=>e.id));for(const e of base.entries)if(!presentA.has(e.id)||!presentB.has(e.id))entries.delete(e.id)}
     [...a.writingData.works,...b.writingData.works].forEach(w=>{
       const old=works.get(w.id);if(!old){works.set(w.id,{...w,chapters:(w.chapters||[]).map(c=>({...c}))});return}
       const chapters=new Map();[...(old.chapters||[]),...(w.chapters||[])].forEach(c=>{const prev=chapters.get(c.id);if(!prev||(c.updatedAt||c.createdAt||"")>=(prev.updatedAt||prev.createdAt||""))chapters.set(c.id,{...c})});
       works.set(w.id,{...((w.updatedAt||"")>=(old.updatedAt||"")?w:old),chapters:[...chapters.values()]});
     });
-    return {version:2,entries:[...entries.values()],categories:{idea:unique([...a.categories.idea,...b.categories.idea]),diary:unique([...a.categories.diary,...b.categories.diary])},writingData:{works:[...works.values()]}};
+    if(base){
+      const wa=new Map(a.writingData.works.map(w=>[w.id,w])),wb=new Map(b.writingData.works.map(w=>[w.id,w]));
+      for(const w of base.writingData.works){
+        if(!wa.has(w.id)||!wb.has(w.id)){works.delete(w.id);continue}
+        const merged=works.get(w.id),aw=wa.get(w.id),bw=wb.get(w.id),baseChapterIds=new Set((w.chapters||[]).map(c=>c.id));
+        const aChapterIds=new Set((aw.chapters||[]).map(c=>c.id)),bChapterIds=new Set((bw.chapters||[]).map(c=>c.id));
+        merged.chapters=merged.chapters.filter(c=>!baseChapterIds.has(c.id)||(aChapterIds.has(c.id)&&bChapterIds.has(c.id)));
+      }
+    }
+    function mergeCategories(type){
+      const merged=unique([...a.categories[type],...b.categories[type]]);
+      if(!base)return merged;
+      const aa=new Set(a.categories[type]),bb=new Set(b.categories[type]),defaultsSet=new Set(cloneDefaults().categories[type]);
+      return merged.filter(c=>defaultsSet.has(c)||!base.categories[type].includes(c)||(aa.has(c)&&bb.has(c)));
+    }
+    return {version:2,entries:[...entries.values()],categories:{idea:mergeCategories("idea"),diary:mergeCategories("diary")},writingData:{works:[...works.values()]}};
   }
   function countPayload(value){const p=normalizePayload(value);return p.entries.length+" 条记录（灵感 "+p.entries.filter(e=>e.type==="idea").length+"，日记 "+p.entries.filter(e=>e.type==="diary").length+"），"+p.writingData.works.length+" 部作品"}
   function saveSyncedBaseline(payload,updatedAt){
@@ -304,7 +323,8 @@ body.editing-entry #editorView{min-height:100dvh;display:block;padding:calc(8px 
     if(!cloudUser)return;
     try{
       const row=await fetchCloudRow();if(!row){const ok=await writeCloudPayload(parseLocalPayload(),true);if(ok)cloudStatus("本机数据已上传，自动同步已开启。");return}
-      const merged=mergePayloads(parseLocalPayload(),row.payload);applyPayload(merged);
+      const rawBaseline=localStorage.getItem(cloudSnapshotKey());let baseline=null;try{baseline=rawBaseline?JSON.parse(rawBaseline):null}catch(e){} 
+      const merged=mergePayloads(parseLocalPayload(),row.payload,baseline);applyPayload(merged);
       const ok=await writeCloudPayload(merged,true);if(ok)cloudStatus("本机与云端数据已合并并同步。相同 ID 的记录保留更新时间较新的版本。");
     }catch(e){cloudStatus("合并失败："+(e.message||"网络错误")+"。本机数据仍保留。")}
   }
