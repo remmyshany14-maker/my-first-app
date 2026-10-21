@@ -610,24 +610,43 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
     }finally{cloudBusy=false}
   }
   async function prepareCloudForUser(user){
+    // A successful login should activate cross-device sync without requiring a
+    // second manual migration click. On first binding, merge both sides by ID/time.
     cloudUser=user;cloudSyncEnabled=false;cloudConflict=false;cloudBaseUpdatedAt=null;cloudLastSynced=null;cloudSetPanelState();cloudStatus("正在检查云端数据…");
     try{
       const row=await fetchCloudRow(),local=parseLocalPayload();
-      if(!row){
-        $("cloudMigrationInfo").textContent="云端还没有记录。本机有："+countPayload(local)+"。确认后可首次上传。";
-        cloudSetPanelState();cloudStatus("账号已登录，云端暂无数据。请点击「上传本机数据」开始同步。");return;
-      }
-      $("cloudMigrationInfo").textContent="云端已有："+countPayload(row.payload)+"；本机有："+countPayload(local)+"。首次绑定请选择处理方式。";
       const mode=localStorage.getItem(cloudModeKey()),baseline=localStorage.getItem(cloudSnapshotKey());
+      if(!row){
+        const ok=await writeCloudPayload(local,true);
+        if(ok)cloudStatus("已自动开启云同步，并上传本机数据。");
+        return;
+      }
       if(mode==="enabled"&&baseline){
         cloudBaseUpdatedAt=row.updated_at;cloudLastSynced=baseline;
         const localJSON=localPayloadJSON(),remoteJSON=stableJSON(normalizePayload(row.payload));
-        if(localJSON===baseline&&remoteJSON!==baseline){applyPayload(row.payload);saveSyncedBaseline(row.payload,row.updated_at);cloudStatus("已自动接收云端更新。")}
-        else if(localJSON!==baseline&&remoteJSON===baseline){cloudSyncEnabled=true;cloudSetPanelState();await writeCloudPayload(local,false)}
-        else if(localJSON!==baseline&&remoteJSON!==baseline&&localJSON!==remoteJSON){cloudConflict=true;cloudSetPanelState();cloudStatus("本机和云端都发生了变化，已暂停同步，请选择合并或保留一方。")}
-        else{saveSyncedBaseline(row.payload,row.updated_at);cloudStatus("账号已连接，云端数据已同步。")}
-      }else{cloudSyncEnabled=false;cloudSetPanelState();cloudStatus("发现云端数据，请选择上传本机、使用云端或合并。")}
-    }catch(e){cloudStatus("读取云端失败："+(e.message||"请检查网络、表结构和 RLS 设置"))}
+        if(localJSON===baseline&&remoteJSON!==baseline){
+          applyPayload(row.payload);saveSyncedBaseline(row.payload,row.updated_at);cloudStatus("已自动接收云端更新。");
+        }else if(localJSON!==baseline&&remoteJSON===baseline){
+          cloudSyncEnabled=true;cloudSetPanelState();await writeCloudPayload(local,false);
+        }else if(localJSON!==baseline&&remoteJSON!==baseline&&localJSON!==remoteJSON){
+          const merged=mergePayloads(local,row.payload,JSON.parse(baseline));
+          applyPayload(merged);
+          cloudBaseUpdatedAt=row.updated_at;
+          const ok=await writeCloudPayload(merged,true);
+          if(ok)cloudStatus("已自动合并本机与云端修改并同步。");
+        }else{
+          saveSyncedBaseline(row.payload,row.updated_at);cloudStatus("账号已连接，云端数据已同步。");
+        }
+        return;
+      }
+      // First login on this browser/device: do not silently replace either side.
+      // Merge unique records/works and resolve same-ID edits by their update time.
+      cloudStatus("首次连接，正在合并本机与云端数据…");
+      const merged=mergePayloads(local,row.payload,null);
+      applyPayload(merged);
+      const ok=await writeCloudPayload(merged,true);
+      if(ok)cloudStatus("首次连接完成：本机与云端数据已合并，自动同步已开启。");
+    }catch(e){cloudStatus("云端同步失败："+(e.message||"请检查网络、表结构和 RLS 设置"))}
   }
   async function cloudSignIn(){
     if(!cloudClient){cloudStatus("登录失败：Supabase 登录组件未加载。请检查网络是否能访问 Supabase SDK，然后刷新页面。");return}
