@@ -103,6 +103,43 @@ body.editing-entry #editorView{min-height:100dvh;display:block;padding:calc(8px 
       .writer-main{padding:22px}
     }
 
+
+/* Writing workspace: no repeated branding, compact margins, flexible chapter pane */
+body.writing-active .topbar{display:none!important}
+body.writing-active .app{width:100%!important;max-width:none!important;margin:0!important;padding:10px 12px calc(18px + env(safe-area-inset-bottom))!important}
+body.writing-active #writingView{width:100%;max-width:none;margin:0;padding:0!important}
+body.writing-active .writer-library{max-width:none;width:100%;margin:8px 0 0}
+body.writing-active .library-heading{margin:0 0 14px}
+body.writing-active .library-heading h2{font-size:20px}
+body.writing-active .writer-detail-head{margin:0 0 10px;padding:2px 0;min-height:38px;gap:10px}
+body.writing-active .writer-detail-name{flex:1}
+body.writing-active .writer-layout{width:100%;display:grid;grid-template-columns:minmax(175px,var(--writer-sidebar-width,250px)) 12px minmax(0,1fr);gap:0;align-items:stretch;min-height:calc(100dvh - 72px)}
+body.writing-active .writer-side{grid-column:1;grid-row:1;align-self:stretch;height:auto;min-height:calc(100dvh - 72px);padding:12px 10px;border-radius:12px 0 0 12px;overflow:auto}
+body.writing-active .writer-main{grid-column:3;grid-row:1;width:100%;min-width:0;min-height:calc(100dvh - 72px);padding:clamp(14px,2vw,28px);border-radius:0 12px 12px 0;display:flex;flex-direction:column}
+body.writing-active .writer-resizer{grid-column:2;grid-row:1;width:12px;min-height:calc(100dvh - 72px);cursor:col-resize;touch-action:none;position:relative;z-index:20;align-self:stretch}
+body.writing-active .writer-resizer:before{content:"";position:absolute;inset:0 3px;background:transparent}
+body.writing-active .writer-resizer:after{content:"";position:absolute;top:0;bottom:0;left:5px;width:2px;background:#ded9eb;border-radius:3px}
+body.writing-active .writer-resizer:hover:after,body.writing-active .writer-resizer.dragging:after{left:4px;width:4px;background:var(--purple)}
+body.writing-active .writer-side,body.writing-active .writer-main{box-shadow:none}
+body.writing-active #chapterEditor{display:flex;flex:1;flex-direction:column;min-height:0}
+body.writing-active #chapterTitle{flex:0 0 auto;width:100%;font-size:clamp(20px,2vw,27px);line-height:1.45;padding:8px 2px 12px;margin-bottom:4px}
+body.writing-active #chapterBody{flex:1;width:100%;min-height:calc(100dvh - 220px);height:auto;resize:vertical;font-size:clamp(16px,1.2vw,18px);line-height:1.9;letter-spacing:.01em;padding:18px 20px;border-radius:10px;overflow-wrap:anywhere;white-space:pre-wrap}
+body.writing-active .writer-toolbar{gap:8px;margin:8px 0}
+body.writing-active .writer-helper{display:none!important}
+body.writing-active .writer-empty{margin:auto}
+body.resizing-writer-sidebar{cursor:col-resize!important;user-select:none!important}
+body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!important}
+@media(max-width:620px){
+ body.writing-active .app{padding:8px 8px calc(86px + env(safe-area-inset-bottom))!important}
+ body.writing-active .writer-detail-head{gap:7px;flex-wrap:wrap}
+ body.writing-active .writer-detail-name{min-width:90px}
+ body.writing-active .writer-layout{display:grid;grid-template-columns:1fr;gap:8px;min-height:0}
+ body.writing-active .writer-side{grid-column:1;grid-row:1;min-height:0;height:auto;max-height:155px;border-radius:12px;padding:10px;overflow:auto}
+ body.writing-active .writer-resizer{display:none!important}
+ body.writing-active .writer-main{grid-column:1;grid-row:2;min-height:calc(100dvh - 250px);padding:12px;border-radius:12px}
+ body.writing-active #chapterList{grid-template-columns:repeat(2,minmax(0,1fr));max-height:100px;overflow:auto}
+ body.writing-active #chapterBody{min-height:55dvh;padding:14px;font-size:16px;line-height:1.85}
+}
   </style>
 </head>
 <body>
@@ -219,6 +256,7 @@ body.editing-entry #editorView{min-height:100dvh;display:block;padding:calc(8px 
     if (!button) return;
     event.preventDefault();
     const id = button.dataset.view;
+    document.body.classList.toggle("writing-active", id === "writingView");
     document.querySelectorAll(".view").forEach(view => view.classList.toggle("active", view.id === id));
     document.querySelectorAll(".nav-btn").forEach(item => item.classList.toggle("active", item === button));
     if (id === "editorView") document.body.classList.add("editing-entry");
@@ -443,7 +481,7 @@ body.editing-entry #editorView{min-height:100dvh;display:block;padding:calc(8px 
   function renderHome(){const sorted=sortedEntries();$("recentList").innerHTML=sorted.length?sorted.slice(0,4).map(cardHTML).join(""):emptyHTML("还没有记录","把第一个灵感或今天的日记写下来吧。","开始记录");bindEntryCards($("recentList"));}
   function renderCategoryFilters(){const types=filterType==="all"?["idea","diary",...(data.customTypes||[])]:[filterType];const cats=unique(types.flatMap(t=>data.categories[t]||[]));$("categoryFilters").innerHTML='<button class="chip '+(filterCategory==="all"?"active":"")+'" data-category="all">全部细分</button><button class="chip '+(filterCategory==="__none__"?"active":"")+'" data-category="__none__">不细分</button>'+cats.map(c=>'<button class="chip '+(filterCategory===c?"active":"")+'" data-category="'+escapeHTML(c)+'">'+escapeHTML(c)+'</button>').join("");$("categoryFilters").querySelectorAll("[data-category]").forEach(b=>b.addEventListener("click",()=>{filterCategory=b.dataset.category;renderList()}))} function renderTypeFilters(){$("typeFilters").innerHTML=[["all","全部"],["idea","灵感"],["diary","日记"],...(data.customTypes||[]).map(t=>[t,t])].map(([v,l])=>'<button class="chip '+(filterType===v?"active":"")+'" data-type="'+escapeHTML(v)+'">'+escapeHTML(l)+'</button>').join("")+'<button type="button" class="chip type-add" id="addTypeButton" title="新增分类" aria-label="新增分类">＋</button>';$("addTypeButton").addEventListener("click",addCustomType)}
   function renderList(){renderTypeFilters();renderCategoryFilters();const query=searchTerm.trim().toLocaleLowerCase();const entries=sortedEntries().filter(e=>(filterType==="all"||e.type===filterType)&&(filterCategory==="all"||(filterCategory==="__none__"?!e.category:e.category===filterCategory))&&(!query||[e.title,e.body,e.category,e.date].some(v=>String(v||"").toLocaleLowerCase().includes(query))));$("listHeading").textContent=filterType==="all"?"全部记录":typeLabel(filterType)+"记录";$("resultCount").textContent=entries.length+" 条记录";$("allList").innerHTML=entries.length?entries.map(cardHTML).join(""):emptyHTML("没有找到记录",query?"换个关键词试试，或清除搜索条件。":"这里还空着，随时可以开始写。","新建记录");bindEntryCards($("allList"))}
-  function showView(id){activeView=id;document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));document.querySelectorAll(".nav-btn").forEach(b=>b.classList.toggle("active",b.dataset.view===id));if(id==="editorView"){document.body.classList.add("editing-entry")}else{document.body.classList.remove("editing-entry")}if(id!=="writingView")document.body.classList.remove("focus-writing");if(id==="homeView")renderHome();if(id==="listView")renderList();if(id==="categoryView")renderCategories();if(id==="settingsView")renderSettings();if(id==="writingView"){flushWriterSave();renderWriter()}window.scrollTo({top:0,behavior:"smooth"})}
+  function showView(id){activeView=id;document.body.classList.toggle("writing-active",id==="writingView");document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));document.querySelectorAll(".nav-btn").forEach(b=>b.classList.toggle("active",b.dataset.view===id));if(id==="editorView"){document.body.classList.add("editing-entry")}else{document.body.classList.remove("editing-entry")}if(id!=="writingView")document.body.classList.remove("focus-writing");if(id==="homeView")renderHome();if(id==="listView")renderList();if(id==="categoryView")renderCategories();if(id==="settingsView")renderSettings();if(id==="writingView"){flushWriterSave();renderWriter()}window.scrollTo({top:0,behavior:"smooth"})}
   let editorSaveTimer=null, editorDirty=false;
   function populateEntryTypes(selected){const types=[["idea","灵感"],["diary","日记"],...(data.customTypes||[]).map(t=>[t,t])];$("entryTypeSelect").innerHTML=types.map(([v,l])=>'<option value="'+escapeHTML(v)+'"'+(v===selected?' selected':'')+'>'+escapeHTML(l)+'</option>').join("")}
   function refreshEntryCategories(selected){if(!data.categories[editorType])data.categories[editorType]=[];$("entryCategory").innerHTML=categoryOptions(editorType,selected||"");$("entryCategory").value=selected||""}
@@ -498,7 +536,7 @@ body.editing-entry #editorView{min-height:100dvh;display:block;padding:calc(8px 
   window.addEventListener("beforeunload",flushWriterSave);
 
   function initSidebar(){if(window.innerWidth<900)return;const widthKey="lingganriji-sidebar-width-v1",collapsedKey="lingganriji-sidebar-collapsed-v1";let width=Number(localStorage.getItem(widthKey))||228;const applyWidth=()=>{width=Math.max(180,Math.min(360,width));document.documentElement.style.setProperty("--sidebar-width",width+"px")};applyWidth();if(localStorage.getItem(collapsedKey)==="1")document.body.classList.add("sidebar-collapsed");$("sidebarToggle")?.addEventListener("click",()=>{document.body.classList.toggle("sidebar-collapsed");localStorage.setItem(collapsedKey,document.body.classList.contains("sidebar-collapsed")?"1":"0")});const grip=$("sidebarResizer");let startX=0,startWidth=width;grip?.addEventListener("pointerdown",e=>{if(document.body.classList.contains("sidebar-collapsed"))return;startX=e.clientX;startWidth=width;grip.classList.add("dragging");grip.setPointerCapture(e.pointerId);e.preventDefault()});grip?.addEventListener("pointermove",e=>{if(!grip.classList.contains("dragging"))return;width=startWidth+(e.clientX-startX);applyWidth()});const finish=()=>{if(!grip?.classList.contains("dragging"))return;grip.classList.remove("dragging");localStorage.setItem(widthKey,String(width))};grip?.addEventListener("pointerup",finish);grip?.addEventListener("pointercancel",finish);grip?.addEventListener("keydown",e=>{if(e.key==="ArrowLeft"||e.key==="ArrowRight"){width+=e.key==="ArrowRight"?12:-12;applyWidth();localStorage.setItem(widthKey,String(width));e.preventDefault()}})}
-  function initWriterResizer(){const grip=$("writerResizer");if(!grip)return;const key="lingganriji-writer-sidebar-width-v1";let width=Number(localStorage.getItem(key))||240;const apply=()=>{width=Math.max(170,Math.min(420,width));document.documentElement.style.setProperty("--writer-sidebar-width",width+"px")};apply();let startX=0,startWidth=width;grip.addEventListener("pointerdown",e=>{if(window.innerWidth<621)return;startX=e.clientX;startWidth=width;grip.classList.add("dragging");grip.setPointerCapture(e.pointerId);e.preventDefault()});grip.addEventListener("pointermove",e=>{if(!grip.classList.contains("dragging"))return;width=startWidth+(e.clientX-startX);apply()});const finish=()=>{if(!grip.classList.contains("dragging"))return;grip.classList.remove("dragging");localStorage.setItem(key,String(width))};grip.addEventListener("pointerup",finish);grip.addEventListener("pointercancel",finish);grip.addEventListener("keydown",e=>{if(e.key==="ArrowLeft"||e.key==="ArrowRight"){width+=e.key==="ArrowRight"?12:-12;apply();localStorage.setItem(key,String(width));e.preventDefault()}})}
+  function initWriterResizer(){const grip=$("writerResizer"),layout=$("writerLayout");if(!grip||!layout)return;const key="lingganriji-writer-sidebar-width-v1";let width=Number(localStorage.getItem(key))||250;const apply=()=>{width=Math.max(175,Math.min(480,width));layout.style.gridTemplateColumns=width+"px 12px minmax(0,1fr)";document.documentElement.style.setProperty("--writer-sidebar-width",width+"px")};apply();let startX=0,startWidth=width,dragging=false;const move=e=>{if(!dragging)return;width=startWidth+(e.clientX-startX);apply();e.preventDefault()};const finish=()=>{if(!dragging)return;dragging=false;grip.classList.remove("dragging");document.body.classList.remove("resizing-writer-sidebar");localStorage.setItem(key,String(width));window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",finish);window.removeEventListener("pointercancel",finish)};grip.addEventListener("pointerdown",e=>{if(window.innerWidth<621)return;dragging=true;startX=e.clientX;startWidth=width;grip.classList.add("dragging");document.body.classList.add("resizing-writer-sidebar");window.addEventListener("pointermove",move,{passive:false});window.addEventListener("pointerup",finish);window.addEventListener("pointercancel",finish);e.preventDefault()});grip.addEventListener("keydown",e=>{if(e.key==="ArrowLeft"||e.key==="ArrowRight"){width+=e.key==="ArrowRight"?12:-12;apply();localStorage.setItem(key,String(width));e.preventDefault()}})}
   initSidebar();initWriterResizer();
   renderHome();
   renderWriter();
