@@ -774,7 +774,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
     if(closeModal){closeModal.classList.add("hidden");return true}
     if(document.body.classList.contains("editing-entry")){
       document.body.classList.remove("editing-entry");
-      const target=viewHistory.pop()||"listView";showView(target);return true;
+      const target=viewHistory.pop()||"listView";activeView=target;showView(target);return true;
     }
     if($("writerLayout")?.classList.contains("writer-nav-open")){
       $("writerLayout").classList.remove("writer-nav-open");$("chapterNavToggle")?.setAttribute("aria-expanded","false");return true;
@@ -782,7 +782,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
     if(activeView==="writingView"&&writerScreen!=="library"){
       flushWriterSave();writerScreen="library";document.body.classList.remove("focus-writing");$("writerLayout").classList.remove("writer-nav-open");renderWriter();return true;
     }
-    if(activeView!=="homeView"){const target=viewHistory.pop()||"homeView";showView(target);return true}
+    if(activeView!=="homeView"){const target=viewHistory.pop()||"homeView";activeView=target;showView(target);return true}
     toast("已在首页");return true;
   };
 ry?"换个关键词试试，或清除搜索条件。":"这里还空着，随时可以开始写。","新建记录");bindEntryCards($("allList"))}
