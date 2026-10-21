@@ -56,7 +56,7 @@ jobs:
           scripts = re.findall(r"<script>(.*?)</script>", html, re.S)
           if not scripts:
               raise SystemExit("No inline app script found")
-          Path("/tmp/lingganriji-check.js").write_text("\\n".join(scripts), encoding="utf-8")
+          Path("/tmp/lingganriji-check.js").write_text("\n".join(scripts), encoding="utf-8")
           PY
           node --check /tmp/lingganriji-check.js
       - name: Build APK
