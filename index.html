@@ -122,7 +122,18 @@ body.editing-entry #editorView{min-height:100dvh;display:block;padding:calc(8px 
     <div class="section-head" style="margin-top:18px"><h2 style="font-size:24px;margin:0">设置与数据</h2></div>
     <div class="settings-card"><h3>数据备份</h3><p>记录目前保存在当前浏览器里。导出一个文件即可备份灵感、日记、分类和正式作品。换设备时，在新设备导入这个文件。</p><div class="settings-actions"><button class="primary" id="exportData">导出备份</button><button class="secondary" id="importButton">导入备份</button><input class="hidden" id="importFile" type="file" accept="application/json,.json"></div></div>
     <div class="settings-card"><h3>本地存储</h3><p id="storageInfo">正在读取存储状态…</p></div>
-    <div class="settings-card"><h3>云同步</h3><p>云同步正在配置中，目前数据仍只保存在本设备。配置完成后，可在电脑、iPad 和安卓设备间登录同一账号同步。</p><p><strong>安全说明：</strong>只会在网页中使用 Supabase 的公开项目地址和公开密钥；数据库通过行级安全策略隔离每个账号的数据。不要把 service_role 或 secret key 放进网页。</p><div class="settings-actions"><button class="secondary" id="cloudSetupInfo" type="button">查看配置步骤</button></div><p class="subtle" id="cloudSetupStatus">状态：尚未连接云端，不会上传或覆盖你的记录。</p></div>
+    <div class="settings-card"><h3>账号与云同步</h3>
+<p>使用同一个邮箱账号，在电脑、iPad 和安卓设备间同步灵感、日记、分类、作品和章节。退出登录不会删除本地记录。</p>
+<div id="cloudAuthForm"><div class="field"><label for="cloudEmail">邮箱</label><input class="text-input" id="cloudEmail" type="email" autocomplete="email" placeholder="name@example.com"></div>
+<div class="field"><label for="cloudPassword">密码</label><input class="text-input" id="cloudPassword" type="password" autocomplete="current-password" minlength="6" placeholder="至少 6 位"></div>
+<div class="settings-actions"><button class="primary" id="cloudSignIn" type="button">登录</button><button class="secondary" id="cloudSignUp" type="button">注册新账号</button></div></div>
+<div id="cloudAccountPanel" class="hidden"><p id="cloudUserLabel"></p><div id="cloudMigrationPanel" class="hidden"><p id="cloudMigrationInfo"></p>
+<div class="settings-actions"><button class="primary" id="cloudUploadLocal" type="button">上传本机数据</button><button class="secondary" id="cloudDownloadRemote" type="button">使用云端数据</button><button class="secondary" id="cloudMergeData" type="button">合并两边数据</button></div></div>
+<div id="cloudConflictPanel" class="hidden"><p>检测到另一台设备可能更新了云端数据。为避免覆盖，请先选择如何处理。</p>
+<div class="settings-actions"><button class="secondary" id="cloudResolveDownload" type="button">以云端为准</button><button class="secondary" id="cloudResolveMerge" type="button">合并两边数据</button><button class="danger" id="cloudResolveUpload" type="button">用本机覆盖云端</button></div></div>
+<div class="settings-actions"><button class="secondary" id="cloudCheckNow" type="button">检查云端更新</button><button class="secondary" id="cloudSignOut" type="button">退出登录</button></div></div>
+<p class="subtle" id="cloudSetupStatus">尚未连接。登录后会先让你选择迁移方式，不会自动覆盖数据。</p>
+<p class="subtle">安全说明：网页只使用 Supabase Publishable key；数据库通过 RLS 隔离账号数据。不要把 service_role 或 secret key 放进网页。</p></div>
     <div class="settings-card"><h3>危险操作</h3><p>清空操作会删除本浏览器中保存的所有记录，且无法撤销。请先导出备份。</p><button class="danger" id="clearData">清空所有记录</button></div>
   </section>
 </div>
@@ -134,6 +145,7 @@ body.editing-entry #editorView{min-height:100dvh;display:block;padding:calc(8px 
   <button class="nav-btn" data-view="settingsView"><span class="nav-icon">⚙</span><span>设置</span></button>
 </nav>
 <div class="notice" id="notice" role="status" aria-live="polite" hidden></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (() => {
   "use strict";
@@ -146,9 +158,177 @@ body.editing-entry #editorView{min-height:100dvh;display:block;padding:calc(8px 
   function loadData(){ try { const raw=localStorage.getItem(KEY); if(!raw)return cloneDefaults(); const parsed=JSON.parse(raw); if(!parsed||!Array.isArray(parsed.entries)||!parsed.categories)return cloneDefaults(); return {version:1,entries:parsed.entries.filter(e=>e&&e.id&&["idea","diary"].includes(e.type)),categories:{idea:unique([...(defaults.categories.idea),...(Array.isArray(parsed.categories.idea)?parsed.categories.idea:[]) ]),diary:unique([...(defaults.categories.diary),...(Array.isArray(parsed.categories.diary)?parsed.categories.diary:[])])}}; } catch(e){ return cloneDefaults(); } }
   function cloneDefaults(){return JSON.parse(JSON.stringify(defaults))}
   function unique(arr){return [...new Set(arr.map(x=>String(x).trim()).filter(Boolean))]}
-  function persist(){try{localStorage.setItem(KEY,JSON.stringify(data));return true}catch(e){toast("保存失败：浏览器存储空间可能不足，请先导出备份。");return false}}
+  function persist(){try{localStorage.setItem(KEY,JSON.stringify(data));scheduleCloudSync();return true}catch(e){toast("保存失败：浏览器存储空间可能不足，请先导出备份。");return false}}
   function toast(message){const n=$("notice");n.textContent=message;n.hidden=false;clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>n.hidden=true,2600)}
   function escapeHTML(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+  const SUPABASE_URL = "https://vqkvzhojffyhymkrwxox.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_7uNhSwrfhOF_TOBLGP018w_wjo76vEI";
+  const cloudClient = window.supabase?.createClient ? window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY) : null;
+  let cloudUser=null,cloudSyncEnabled=false,cloudBusy=false,cloudConflict=false,cloudApplying=false;
+  let cloudBaseUpdatedAt=null,cloudLastSynced=null,cloudTimer=null,cloudRowExists=false;
+  function cloudModeKey(){return cloudUser?"lingganriji-cloud-mode-"+cloudUser.id:""}
+  function cloudSnapshotKey(){return cloudUser?"lingganriji-cloud-snapshot-"+cloudUser.id:""}
+  function currentPayload(){flushWriterSave();return {version:2,entries:data.entries,categories:data.categories,writingData:writingData}}
+  function stableJSON(v){return JSON.stringify(v)}
+  function localPayloadJSON(){return stableJSON(currentPayload())}
+  function cloudStatus(m){const e=$("cloudSetupStatus");if(e)e.textContent=m}
+  function cloudSetPanelState(){
+    $("cloudAuthForm").classList.toggle("hidden",!!cloudUser);
+    $("cloudAccountPanel").classList.toggle("hidden",!cloudUser);
+    $("cloudMigrationPanel").classList.toggle("hidden",!cloudUser||cloudSyncEnabled||cloudConflict);
+    $("cloudConflictPanel").classList.toggle("hidden",!cloudUser||!cloudConflict);
+    if(cloudUser)$("cloudUserLabel").textContent="已登录："+(cloudUser.email||"邮箱账号");
+  }
+  function normalizePayload(payload){
+    const p=payload&&typeof payload==="object"?payload:{},d=cloneDefaults();
+    return {version:2,
+      entries:Array.isArray(p.entries)?p.entries.filter(e=>e&&e.id&&["idea","diary"].includes(e.type)) : [],
+      categories:{idea:unique([...d.categories.idea,...(Array.isArray(p.categories?.idea)?p.categories.idea:[])]),diary:unique([...d.categories.diary,...(Array.isArray(p.categories?.diary)?p.categories.diary:[])])},
+      writingData:{works:Array.isArray(p.writingData?.works)?p.writingData.works.filter(w=>w&&w.id&&Array.isArray(w.chapters)).map(w=>({...w,chapters:w.chapters.filter(c=>c&&c.id)})) : []}};
+  }
+  function parseLocalPayload(){return normalizePayload(currentPayload())}
+  function applyPayload(payload){
+    cloudApplying=true;
+    try{
+      const p=normalizePayload(payload);
+      data={version:1,entries:p.entries,categories:p.categories};writingData=p.writingData;
+      if(!persist())throw new Error("本地记录保存失败，请检查浏览器空间");
+      if(!saveWritingData())throw new Error("正式作品保存失败，请先导出备份");
+      renderHome();renderList();renderCategories();renderWriter();renderSettings();
+    }finally{cloudApplying=false}
+  }
+  function mergePayloads(localValue,remoteValue){
+    const a=normalizePayload(localValue),b=normalizePayload(remoteValue),entries=new Map(),works=new Map();
+    [...a.entries,...b.entries].forEach(e=>{const old=entries.get(e.id);if(!old||(e.updatedAt||e.createdAt||"")>=(old.updatedAt||old.createdAt||""))entries.set(e.id,{...e})});
+    [...a.writingData.works,...b.writingData.works].forEach(w=>{
+      const old=works.get(w.id);if(!old){works.set(w.id,{...w,chapters:(w.chapters||[]).map(c=>({...c}))});return}
+      const chapters=new Map();[...(old.chapters||[]),...(w.chapters||[])].forEach(c=>{const prev=chapters.get(c.id);if(!prev||(c.updatedAt||c.createdAt||"")>=(prev.updatedAt||prev.createdAt||""))chapters.set(c.id,{...c})});
+      works.set(w.id,{...((w.updatedAt||"")>=(old.updatedAt||"")?w:old),chapters:[...chapters.values()]});
+    });
+    return {version:2,entries:[...entries.values()],categories:{idea:unique([...a.categories.idea,...b.categories.idea]),diary:unique([...a.categories.diary,...b.categories.diary])},writingData:{works:[...works.values()]}};
+  }
+  function countPayload(value){const p=normalizePayload(value);return p.entries.length+" 条记录（灵感 "+p.entries.filter(e=>e.type==="idea").length+"，日记 "+p.entries.filter(e=>e.type==="diary").length+"），"+p.writingData.works.length+" 部作品"}
+  function saveSyncedBaseline(payload,updatedAt){
+    cloudLastSynced=stableJSON(normalizePayload(payload));cloudBaseUpdatedAt=updatedAt||null;
+    try{localStorage.setItem(cloudSnapshotKey(),cloudLastSynced);localStorage.setItem(cloudModeKey(),"enabled")}catch(e){}
+    cloudSyncEnabled=true;cloudConflict=false;cloudSetPanelState();
+  }
+  async function fetchCloudRow(){
+    if(!cloudClient||!cloudUser)throw new Error("请先登录");
+    const {data:row,error}=await cloudClient.from("user_documents").select("user_id,payload,updated_at").eq("user_id",cloudUser.id).maybeSingle();
+    if(error)throw error;cloudRowExists=!!row;return row;
+  }
+  async function writeCloudPayload(payload,allowReplace){
+    if(!cloudClient||!cloudUser)throw new Error("请先登录");
+    const {data:existing,error:readError}=await cloudClient.from("user_documents").select("updated_at").eq("user_id",cloudUser.id).maybeSingle();
+    if(readError)throw readError;
+    if(existing?.updated_at&&cloudBaseUpdatedAt&&existing.updated_at!==cloudBaseUpdatedAt&&!allowReplace){
+      cloudConflict=true;cloudSyncEnabled=false;cloudSetPanelState();cloudStatus("云端在本机上次同步后发生了变化，已暂停自动上传。请选择合并或以一方为准。");return false;
+    }
+    const now=new Date().toISOString();
+    const {data:row,error}=await cloudClient.from("user_documents").upsert({user_id:cloudUser.id,payload:normalizePayload(payload),updated_at:now},{onConflict:"user_id"}).select("updated_at").single();
+    if(error)throw error;cloudRowExists=true;saveSyncedBaseline(payload,row?.updated_at||now);
+    cloudStatus("已同步 · "+new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"}));return true;
+  }
+  function scheduleCloudSync(){
+    if(cloudApplying||!cloudUser||!cloudSyncEnabled||cloudConflict||cloudBusy)return;
+    if(cloudTimer)clearTimeout(cloudTimer);
+    cloudTimer=setTimeout(()=>{cloudTimer=null;syncLocalChanges().catch(e=>cloudStatus("自动同步失败："+(e.message||"网络错误")+"。本地记录仍已保存。"))},1300);
+  }
+  async function syncLocalChanges(){
+    if(!cloudClient||!cloudUser||!cloudSyncEnabled||cloudConflict||cloudBusy)return;
+    cloudBusy=true;
+    try{
+      const row=await fetchCloudRow(),localJSON=localPayloadJSON(),baseline=cloudLastSynced||localStorage.getItem(cloudSnapshotKey());
+      if(row){
+        const remoteJSON=stableJSON(normalizePayload(row.payload));
+        if(cloudBaseUpdatedAt&&row.updated_at!==cloudBaseUpdatedAt){
+          if(localJSON===baseline){applyPayload(row.payload);saveSyncedBaseline(row.payload,row.updated_at);cloudStatus("已接收另一台设备的更新。")}
+          else{cloudConflict=true;cloudSyncEnabled=false;cloudSetPanelState();cloudStatus("本机和云端都可能有新内容，已暂停自动同步，请处理冲突。")}
+        }else if(localJSON!==baseline){await writeCloudPayload(parseLocalPayload(),false)}
+        else if(remoteJSON!==baseline){applyPayload(row.payload);saveSyncedBaseline(row.payload,row.updated_at)}
+      }else{await writeCloudPayload(parseLocalPayload(),true)}
+    }finally{cloudBusy=false}
+  }
+  async function prepareCloudForUser(user){
+    cloudUser=user;cloudSyncEnabled=false;cloudConflict=false;cloudBaseUpdatedAt=null;cloudLastSynced=null;cloudSetPanelState();cloudStatus("正在检查云端数据…");
+    try{
+      const row=await fetchCloudRow(),local=parseLocalPayload();
+      if(!row){
+        $("cloudMigrationInfo").textContent="云端还没有记录。本机有："+countPayload(local)+"。确认后可首次上传。";
+        cloudSetPanelState();cloudStatus("账号已登录，云端暂无数据。请点击「上传本机数据」开始同步。");return;
+      }
+      $("cloudMigrationInfo").textContent="云端已有："+countPayload(row.payload)+"；本机有："+countPayload(local)+"。首次绑定请选择处理方式。";
+      const mode=localStorage.getItem(cloudModeKey()),baseline=localStorage.getItem(cloudSnapshotKey());
+      if(mode==="enabled"&&baseline){
+        cloudBaseUpdatedAt=row.updated_at;cloudLastSynced=baseline;
+        const localJSON=localPayloadJSON(),remoteJSON=stableJSON(normalizePayload(row.payload));
+        if(localJSON===baseline&&remoteJSON!==baseline){applyPayload(row.payload);saveSyncedBaseline(row.payload,row.updated_at);cloudStatus("已自动接收云端更新。")}
+        else if(localJSON!==baseline&&remoteJSON===baseline){cloudSyncEnabled=true;cloudSetPanelState();await writeCloudPayload(local,false)}
+        else if(localJSON!==baseline&&remoteJSON!==baseline&&localJSON!==remoteJSON){cloudConflict=true;cloudSetPanelState();cloudStatus("本机和云端都发生了变化，已暂停同步，请选择合并或保留一方。")}
+        else{saveSyncedBaseline(row.payload,row.updated_at);cloudStatus("账号已连接，云端数据已同步。")}
+      }else{cloudSyncEnabled=false;cloudSetPanelState();cloudStatus("发现云端数据，请选择上传本机、使用云端或合并。")}
+    }catch(e){cloudStatus("读取云端失败："+(e.message||"请检查网络、表结构和 RLS 设置"))}
+  }
+  async function cloudSignIn(){
+    if(!cloudClient)return toast("Supabase SDK 加载失败，请刷新页面");
+    const email=$("cloudEmail").value.trim(),password=$("cloudPassword").value;if(!email||!password)return toast("请输入邮箱和密码");
+    cloudStatus("正在登录…");const {data:result,error}=await cloudClient.auth.signInWithPassword({email,password});
+    if(error){cloudStatus("登录失败："+error.message);return}if(result.user)await prepareCloudForUser(result.user);
+  }
+  async function cloudSignUp(){
+    if(!cloudClient)return toast("Supabase SDK 加载失败，请刷新页面");
+    const email=$("cloudEmail").value.trim(),password=$("cloudPassword").value;if(!email||!password)return toast("请输入邮箱和密码");if(password.length<6)return toast("密码至少需要 6 位");
+    cloudStatus("正在注册…");const {data:result,error}=await cloudClient.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});
+    if(error){cloudStatus("注册失败："+error.message);return}
+    if(result.session&&result.user)await prepareCloudForUser(result.user);else cloudStatus("注册请求已提交。请查收邮箱并完成验证，再回到本页登录。");
+  }
+  async function chooseUploadLocal(allowReplace=false){
+    if(!cloudUser)return;
+    if(cloudRowExists&&!allowReplace&&!confirm("云端已有数据。用本机数据替换云端会覆盖云端版本，建议先备份。确定继续吗？"))return;
+    if(!confirm("即将把本机的灵感、日记、分类和正式作品上传到云端，不会删除本机数据。继续吗？"))return;
+    try{cloudBusy=true;const ok=await writeCloudPayload(parseLocalPayload(),allowReplace||!cloudRowExists);if(ok)cloudStatus("本机数据已上传，自动同步已开启。")}
+    catch(e){cloudStatus("上传失败："+(e.message||"网络错误"))}finally{cloudBusy=false}
+  }
+  async function chooseDownloadRemote(){
+    if(!cloudUser)return;
+    try{
+      const row=await fetchCloudRow();if(!row){cloudStatus("云端还没有数据，请先上传本机数据。");return}
+      if(!confirm("将用云端数据替换本机的灵感、日记、分类和正式作品。接下来会先下载一份本机 JSON 备份。继续吗？"))return;
+      downloadFile("灵感日记-替换前本机备份-"+today()+".json",JSON.stringify({app:"灵感日记",version:2,exportedAt:new Date().toISOString(),...parseLocalPayload()},null,2),"application/json");
+      applyPayload(row.payload);saveSyncedBaseline(row.payload,row.updated_at);cloudStatus("已使用云端数据，本机与云端已同步。");
+    }catch(e){cloudStatus("下载云端数据失败："+(e.message||"网络错误"))}
+  }
+  async function chooseMergeRemote(){
+    if(!cloudUser)return;
+    try{
+      const row=await fetchCloudRow();if(!row){const ok=await writeCloudPayload(parseLocalPayload(),true);if(ok)cloudStatus("本机数据已上传，自动同步已开启。");return}
+      const merged=mergePayloads(parseLocalPayload(),row.payload);applyPayload(merged);
+      const ok=await writeCloudPayload(merged,true);if(ok)cloudStatus("本机与云端数据已合并并同步。相同 ID 的记录保留更新时间较新的版本。");
+    }catch(e){cloudStatus("合并失败："+(e.message||"网络错误")+"。本机数据仍保留。")}
+  }
+  async function checkCloudNow(){
+    if(!cloudUser)return;
+    try{const row=await fetchCloudRow();if(!row){cloudStatus("云端暂无数据。");return}
+      if(!cloudSyncEnabled){$("cloudMigrationInfo").textContent="云端有："+countPayload(row.payload)+"；本机有："+countPayload(parseLocalPayload())+"。请选择处理方式。";cloudSetPanelState();return}
+      await syncLocalChanges();
+    }catch(e){cloudStatus("检查失败："+(e.message||"网络错误"))}
+  }
+  if(cloudClient){
+    $("cloudSignIn").addEventListener("click",()=>cloudSignIn().catch(e=>cloudStatus("登录失败："+(e.message||"未知错误"))));
+    $("cloudSignUp").addEventListener("click",()=>cloudSignUp().catch(e=>cloudStatus("注册失败："+(e.message||"未知错误"))));
+    $("cloudUploadLocal").addEventListener("click",()=>chooseUploadLocal(false));$("cloudDownloadRemote").addEventListener("click",chooseDownloadRemote);$("cloudMergeData").addEventListener("click",chooseMergeRemote);
+    $("cloudResolveDownload").addEventListener("click",chooseDownloadRemote);$("cloudResolveMerge").addEventListener("click",chooseMergeRemote);
+    $("cloudResolveUpload").addEventListener("click",()=>{if(confirm("确定用本机内容覆盖云端吗？云端当前版本可能会丢失。建议先导出备份。"))chooseUploadLocal(true)});
+    $("cloudCheckNow").addEventListener("click",checkCloudNow);
+    $("cloudSignOut").addEventListener("click",async()=>{const {error}=await cloudClient.auth.signOut();if(error)cloudStatus("退出失败："+error.message);else{cloudUser=null;cloudSyncEnabled=false;cloudConflict=false;cloudSetPanelState();cloudStatus("已退出登录。本机数据仍保留。")}});
+    cloudClient.auth.getSession().then(({data,error})=>{if(error){cloudStatus("读取登录状态失败："+error.message);return}if(data.session?.user)prepareCloudForUser(data.session.user);else cloudSetPanelState()});
+    cloudClient.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){cloudUser=null;cloudSyncEnabled=false;cloudConflict=false;cloudSetPanelState();return}if(session?.user&&(!cloudUser||cloudUser.id!==session.user.id))prepareCloudForUser(session.user)});
+    window.addEventListener("focus",()=>{if(cloudUser&&cloudSyncEnabled&&!cloudConflict)syncLocalChanges().catch(e=>cloudStatus("检查云端失败："+(e.message||"网络错误")))});
+    document.addEventListener("visibilitychange",()=>{if(!document.hidden&&cloudUser&&cloudSyncEnabled&&!cloudConflict)syncLocalChanges().catch(()=>{})});
+  }else{cloudStatus("Supabase SDK 未加载。请检查网络后刷新页面。");$("cloudSignIn").disabled=true;$("cloudSignUp").disabled=true;}
+
   function formatDate(value){if(!value)return "";const parts=value.split("-");return parts.length===3?parts[0]+"年"+Number(parts[1])+"月"+Number(parts[2])+"日":value}
   function sortedEntries(entries=data.entries){return [...entries].sort((a,b)=>(b.updatedAt||b.createdAt||"").localeCompare(a.updatedAt||a.createdAt||""))}
   function categoryOptions(type,selected){const cats=data.categories[type]||[];return cats.map(c=>'<option value="'+escapeHTML(c)+'"'+(c===selected?' selected':'')+'>'+escapeHTML(c)+'</option>').join("")}
@@ -177,14 +357,14 @@ body.editing-entry #editorView{min-height:100dvh;display:block;padding:calc(8px 
   $("typeFilters").querySelectorAll("[data-type]").forEach(btn=>btn.addEventListener("click",()=>{filterType=btn.dataset.type;filterCategory="all";$("typeFilters").querySelectorAll(".chip").forEach(b=>b.classList.toggle("active",b===btn));renderList()}));
   $("deleteEntry").addEventListener("click",()=>{const entry=data.entries.find(e=>e.id===currentId);if(!entry)return;if(!confirm("确定删除「"+entryTitle(entry)+"」吗？此操作无法撤销。"))return;data.entries=data.entries.filter(e=>e.id!==currentId);if(persist())showView("homeView")});
   $("addIdeaCategory").addEventListener("submit",e=>{e.preventDefault();addCategory("idea","newIdeaCategory")});$("addDiaryCategory").addEventListener("submit",e=>{e.preventDefault();addCategory("diary","newDiaryCategory")});
-  $("cloudSetupInfo").addEventListener("click",()=>{toast("请先打开项目中的 SUPABASE_SETUP.md，完成 Supabase 项目和安全策略配置。当前仍是本地模式。");window.open("https://github.com/remmyshany14-maker/my-first-app/blob/main/SUPABASE_SETUP.md","_blank","noopener")});$("exportData").addEventListener("click",exportData);$("importButton").addEventListener("click",()=>$("importFile").click());$("importFile").addEventListener("change",e=>{if(e.target.files?.[0])importData(e.target.files[0])});$("refreshStats").addEventListener("click",()=>{renderSettings();toast("状态已刷新")});$("clearData").addEventListener("click",()=>{if(!confirm("这会永久删除此浏览器保存的全部灵感、日记和自定义分类。建议先取消并导出备份。仍然要清空吗？"))return;data=cloneDefaults();if(persist()){renderSettings();renderHome();toast("本地记录已清空")}});
+  $("exportData").addEventListener("click",exportData);$("importButton").addEventListener("click",()=>$("importFile").click());$("importFile").addEventListener("change",e=>{if(e.target.files?.[0])importData(e.target.files[0])});$("refreshStats").addEventListener("click",()=>{renderSettings();toast("状态已刷新")});$("clearData").addEventListener("click",()=>{if(!confirm("这会永久删除此浏览器保存的全部灵感、日记和自定义分类。建议先取消并导出备份。仍然要清空吗？"))return;data=cloneDefaults();if(persist()){renderSettings();renderHome();toast("本地记录已清空")}});
   document.querySelectorAll(".nav-btn").forEach(btn=>btn.addEventListener("click",()=>showView(btn.dataset.view)));
 
   // Long-form writing workspace: separate local storage so chapters never mix with diary entries.
   const WRITER_KEY = "lingganriji-writing-v1";
   let writingData = loadWritingData(), activeWorkId = null, activeChapterId = null, writerSaveTimer = null;
   function loadWritingData(){try{const raw=localStorage.getItem(WRITER_KEY);if(!raw)return {works:[]};const v=JSON.parse(raw);return {works:Array.isArray(v.works)?v.works.filter(w=>w&&w.id&&Array.isArray(w.chapters)).map(w=>({...w,chapters:w.chapters.filter(c=>c&&c.id)})):[]}}catch(e){return {works:[]}}}
-  function saveWritingData(){try{localStorage.setItem(WRITER_KEY,JSON.stringify(writingData));$("writerSaveStatus").textContent="已自动保存 · "+new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"});return true}catch(e){$("writerSaveStatus").textContent="保存失败，请导出本章";toast("正式作品保存失败，可能是浏览器存储空间不足。");return false}}
+  function saveWritingData(){try{localStorage.setItem(WRITER_KEY,JSON.stringify(writingData));$("writerSaveStatus").textContent="已自动保存 · "+new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"});scheduleCloudSync();return true}catch(e){$("writerSaveStatus").textContent="保存失败，请导出本章";toast("正式作品保存失败，可能是浏览器存储空间不足。");return false}}
   function currentWork(){return writingData.works.find(w=>w.id===activeWorkId)||null}
   function currentChapter(){const w=currentWork();return w?.chapters.find(c=>c.id===activeChapterId)||null}
   function renderWriter(){const workList=$("workList");workList.innerHTML=writingData.works.length?writingData.works.map(w=>'<button class="work-item '+(w.id===activeWorkId?'active':'')+'" data-work="'+escapeHTML(w.id)+'">'+escapeHTML(w.title)+'</button>').join(""):'<div class="writer-empty">还没有作品。<br>点击上方按钮创建。</div>';workList.querySelectorAll("[data-work]").forEach(b=>b.addEventListener("click",()=>{activeWorkId=b.dataset.work;const w=currentWork();activeChapterId=w?.chapters[0]?.id||null;renderWriter()}));
