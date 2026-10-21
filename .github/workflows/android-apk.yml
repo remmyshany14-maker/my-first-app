@@ -43,4 +43,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          gh release create v1.1.1 --title "灵感日记 Android v1.1.1" --notes "修复安卓 App 缺少 INTERNET 权限导致无法加载 Supabase 登录组件的问题；保留多个 CDN 备用加载。包含最新网页界面。此版本为调试签名 APK。" android/app/build/outputs/apk/debug/app-debug.apk#灵感日记-v1.1.1.apk
+          gh release create v1.1.2 --title "灵感日记 Android v1.1.2" --notes "优化手机与电脑自动云同步：定时接收另一设备更新，并自动合并双方修改；包含联网权限和多 CDN 登录加载修复。此版本为调试签名 APK。" android/app/build/outputs/apk/debug/app-debug.apk#灵感日记-v1.1.2.apk
