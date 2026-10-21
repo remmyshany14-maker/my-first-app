@@ -1,15 +1,15 @@
 {
   "id": "./",
-  "name": "我的第一个 App",
-  "short_name": "我的 App",
-  "description": "一个可以安装到手机主屏幕的个人 App 起点。",
+  "name": "灵感日记",
+  "short_name": "灵感日记",
+  "description": "轻量记录日常灵感与生活日记的个人文字工作台。",
   "lang": "zh-CN",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f7f7fc",
-  "theme_color": "#6757d9",
+  "background_color": "#f8f7fc",
+  "theme_color": "#7057d9",
   "icons": [
     {
       "src": "./icon.svg",
