@@ -556,10 +556,31 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
       if(row){
         const remoteJSON=stableJSON(normalizePayload(row.payload));
         if(cloudBaseUpdatedAt&&row.updated_at!==cloudBaseUpdatedAt){
-          if(localJSON===baseline){applyPayload(row.payload);saveSyncedBaseline(row.payload,row.updated_at);cloudStatus("已接收另一台设备的更新。")}
-          else{cloudConflict=true;cloudSyncEnabled=false;cloudSetPanelState();cloudStatus("本机和云端都可能有新内容，已暂停自动同步，请处理冲突。")}
-        }else if(localJSON!==baseline){await writeCloudPayload(parseLocalPayload(),false)}
-        else if(remoteJSON!==baseline){applyPayload(row.payload);saveSyncedBaseline(row.payload,row.updated_at)}
+          if(localJSON===baseline){
+            applyPayload(row.payload);
+            saveSyncedBaseline(row.payload,row.updated_at);
+            cloudStatus("已自动接收另一台设备的更新。");
+          }else if(remoteJSON===localJSON){
+            saveSyncedBaseline(row.payload,row.updated_at);
+          }else{
+            // Both devices changed since the last shared snapshot. Merge records by ID
+            // and timestamp instead of forcing the user to manually upload/download.
+            let basePayload=null;
+            try{const raw=localStorage.getItem(cloudSnapshotKey());basePayload=raw?JSON.parse(raw):null}catch(e){}
+            const merged=mergePayloads(parseLocalPayload(),row.payload,basePayload);
+            applyPayload(merged);
+            cloudBaseUpdatedAt=row.updated_at;
+            cloudLastSynced=baseline;
+            await writeCloudPayload(merged,false);
+            cloudStatus("已自动合并手机与电脑的修改并同步。");
+          }
+        }else if(localJSON!==baseline){
+          await writeCloudPayload(parseLocalPayload(),false);
+        }else if(remoteJSON!==baseline){
+          applyPayload(row.payload);
+          saveSyncedBaseline(row.payload,row.updated_at);
+          cloudStatus("已自动接收云端更新。");
+        }
       }else{await writeCloudPayload(parseLocalPayload(),true)}
     }finally{cloudBusy=false}
   }
@@ -648,6 +669,17 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
     cloudClient.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){cloudUser=null;cloudSyncEnabled=false;cloudConflict=false;cloudSetPanelState();return}if(session?.user&&(!cloudUser||cloudUser.id!==session.user.id))prepareCloudForUser(session.user)});
     window.addEventListener("focus",()=>{if(cloudUser&&cloudSyncEnabled&&!cloudConflict)syncLocalChanges().catch(e=>cloudStatus("检查云端失败："+(e.message||"网络错误")))});
     document.addEventListener("visibilitychange",()=>{if(!document.hidden&&cloudUser&&cloudSyncEnabled&&!cloudConflict)syncLocalChanges().catch(()=>{})});
+    // Supabase Realtime is not guaranteed to be enabled for every project, so use
+    // lightweight polling as a dependable fallback. Visible devices check every 5s;
+    // backgrounded devices check every 20s and reconcile when brought back.
+    setInterval(()=>{
+      if(!cloudUser||!cloudSyncEnabled||cloudConflict||cloudBusy)return;
+      if(document.hidden){
+        if(Date.now()-(window.__lingganLastBackgroundCheck||0)<20000)return;
+        window.__lingganLastBackgroundCheck=Date.now();
+      }
+      syncLocalChanges().catch(e=>console.warn("Background cloud sync failed:",e));
+    },5000);
   }else{cloudStatus("登录组件未加载：已尝试多个 CDN，仍无法下载 Supabase SDK。请检查手机网络/代理是否允许访问 jsDelivr 和 unpkg；本机日记数据未受影响。");$("cloudSignIn").disabled=false;$("cloudSignUp").disabled=false;}
 
   function formatDate(value){if(!value)return "";const parts=value.split("-");return parts.length===3?parts[0]+"年"+Number(parts[1])+"月"+Number(parts[2])+"日":value}
