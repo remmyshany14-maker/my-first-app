@@ -1,18 +1,60 @@
-# 我的第一个 App
+# 灵感日记
 
-这是一个轻量的可安装网页应用（PWA），通过 GitHub Pages 发布。
+一个轻量的个人文字工作台，用来保存日常灵感、写日记、整理分类和搜索旧记录。
 
-## 发布
+**在线使用：** https://remmyshany14-maker.github.io/my-first-app/
 
-GitHub Actions 会在推送到 `main` 分支时自动部署。首次使用时，如果部署没有启动，请打开仓库 **Settings → Pages**，将 **Build and deployment → Source** 设为 **GitHub Actions**。
+## 安装到手机主屏幕
 
-## 安装到手机
+这不是从 App Store 或 Google Play 下载的原生应用，而是一个可安装的网页应用（PWA）。安装后会在主屏幕显示「灵感日记」图标，点击图标即可打开。
 
-- **iPhone / iPad：** 用 Safari 打开发布网址，点“分享”，选择“添加到主屏幕”。
-- **Android：** 用 Chrome 打开发布网址，在菜单中选择“安装应用”或“添加到主屏幕”。
+### iPhone / iPad
 
-首次打开需要联网；Service Worker 会缓存基本页面，之后可尝试离线打开。
+1. 在设备上打开 **Safari**。
+2. 访问 https://remmyshany14-maker.github.io/my-first-app/ 并等待页面加载完成。
+3. 点击 Safari 的「分享」按钮（方框向上箭头）。
+4. 在分享菜单中选择 **「添加到主屏幕」**。如果没看到该选项，向下滚动菜单，或进入「编辑操作」查找。
+5. 确认名称为「灵感日记」。如果出现 **「作为网页 App 打开」/「Open as Web App」**，请开启它。
+6. 点击「添加」。
+7. 回到主屏幕，点击新出现的「灵感日记」图标测试。
 
-## 后续迭代
+> iPhone/iPad 上建议用 Safari 添加到主屏幕，以获得独立的网页 App 体验。
 
-修改 `index.html` 等文件并提交到 `main`，GitHub Actions 会重新发布。
+### Android
+
+1. 使用 **Chrome** 打开 https://remmyshany14-maker.github.io/my-first-app/。
+2. 点击右上角的三点菜单（⋮）。
+3. 选择 **「安装应用」** 或 **「添加到主屏幕」**。不同设备和浏览器的选项文字可能不同。
+4. 按照提示确认安装，然后从主屏幕或应用列表打开「灵感日记」。
+
+### 电脑
+
+- Chrome 或 Edge：打开上方网址，查看地址栏中的安装图标；也可以打开浏览器菜单，寻找「安装此网站为应用」。
+- 安装后可以从桌面或应用列表启动。
+
+## 当前功能
+
+- 记录小说灵感、人物设定、情节片段和世界观
+- 按日期写日记
+- 编辑、删除和回看记录
+- 搜索标题和正文
+- 自定义灵感分类与日记分类
+- 导出 JSON 备份，并从备份导入
+
+## 重要的数据说明
+
+- **记录保存在当前设备、当前浏览器的本地存储中，不会自动上传到 GitHub，也不会自动同步到其他设备。**
+- 不同设备、不同浏览器或网页 App 的存储可能彼此独立。
+- 清除浏览器网站数据、卸载或重置设备等操作可能导致记录丢失。
+- 请定期在应用「设置 → 导出备份」中保存 JSON 备份。导入备份会替换当前记录，请谨慎操作。
+- 当前版本没有账号系统或云端同步功能。
+
+## 部署与更新
+
+本项目通过 GitHub Pages 发布。GitHub Actions 会在向 `main` 分支提交更改后自动部署。
+
+如首次启用 Pages，请在仓库 **Settings → Pages → Build and deployment → Source** 中选择 **GitHub Actions**。
+
+仓库地址：https://github.com/remmyshany14-maker/my-first-app
+
+如果更新后手机仍显示旧页面，请先确认 GitHub Actions 最新部署成功，再关闭并重新打开网页 App，必要时刷新浏览器页面。
