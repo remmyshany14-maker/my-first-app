@@ -148,7 +148,7 @@ body.editing-entry #editorView{min-height:100dvh;display:block;padding:calc(8px 
         <h3>我的作品</h3>
         <button class="primary" id="createWork">＋ 新建作品</button>
         <div id="workList" class="work-list"></div>
-        <div class="section-head"><h3>章节</h3><button class="secondary small-btn" id="createChapter" disabled>＋ 章节</button></div>
+        <div class="section-head"><h3 id="chapterGroupHeading">章节</h3><button class="secondary small-btn" id="createChapter" disabled>＋ 章节</button></div>
         <div id="chapterList" class="chapter-list"><div class="writer-empty">先创建或选择一部作品。</div></div>
       </aside>
       <section class="writer-main">
@@ -470,7 +470,7 @@ body.editing-entry #editorView{min-height:100dvh;display:block;padding:calc(8px 
   function currentWork(){return writingData.works.find(w=>w.id===activeWorkId)||null}
   function currentChapter(){const w=currentWork();return w?.chapters.find(c=>c.id===activeChapterId)||null}
   function renderWriter(){const workList=$("workList");workList.innerHTML=writingData.works.length?writingData.works.map(w=>'<button class="work-item '+(w.id===activeWorkId?'active':'')+'" data-work="'+escapeHTML(w.id)+'">'+escapeHTML(w.title)+'</button>').join(""):'<div class="writer-empty">还没有作品。<br>点击上方按钮创建。</div>';workList.querySelectorAll("[data-work]").forEach(b=>b.addEventListener("click",()=>{activeWorkId=b.dataset.work;const w=currentWork();activeChapterId=w?.chapters[0]?.id||null;renderWriter()}));
-    const w=currentWork();$("createChapter").disabled=!w;$("exportChapter").disabled=!currentChapter();$("writerEmpty").classList.toggle("hidden",!!currentChapter());$("chapterEditor").classList.toggle("hidden",!currentChapter());
+    const w=currentWork();$("chapterGroupHeading").textContent=w?"章节 · "+w.title:"章节";$("createChapter").disabled=!w;$("exportChapter").disabled=!currentChapter();$("writerEmpty").classList.toggle("hidden",!!currentChapter());$("chapterEditor").classList.toggle("hidden",!currentChapter());
     $("chapterList").innerHTML=w?(w.chapters.length?w.chapters.map((c,i)=>'<button class="chapter-item '+(c.id===activeChapterId?'active':'')+'" data-chapter="'+escapeHTML(c.id)+'">'+escapeHTML(c.title||("第"+(i+1)+"章 未命名"))+'</button>').join(""):'<div class="writer-empty">还没有章节。<br>点击「＋ 章节」开始写。</div>'):'<div class="writer-empty">先创建或选择一部作品。</div>';
     $("chapterList").querySelectorAll("[data-chapter]").forEach(b=>b.addEventListener("click",()=>{flushWriterSave();activeChapterId=b.dataset.chapter;renderWriter()}));
     const c=currentChapter();if(c){$("chapterTitle").value=c.title||"";$("chapterBody").value=c.body||"";updateWriterCount()}else{$("chapterTitle").value="";$("chapterBody").value="";$("chapterWordCount").textContent="0 字";$("writerSaveStatus").textContent="选择章节后开始写作"}}
