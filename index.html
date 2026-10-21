@@ -235,14 +235,26 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
  body.writing-active .topbar{display:none!important}
 }
 
-  </style>
+  
+/* Final minimal pass: remove all in-app branding and the sidebar toggle; keep a fixed, balanced icon rail. */
+.topbar,.logo,.brand h1,.brand p,.bottom-nav:before,.sidebar-toggle{display:none!important}
+@media(min-width:900px){
+  :root{--sidebar-width:76px!important}
+  .app{margin-left:76px!important;width:calc(100% - 76px)!important;padding-left:clamp(20px,3vw,44px)!important;padding-right:clamp(20px,3vw,44px)!important}
+  .bottom-nav{width:76px!important;padding:20px 8px!important;align-items:center!important;gap:9px!important}
+  .nav-btn{width:100%!important;min-width:0!important;min-height:48px!important;padding:10px 4px!important;justify-content:center!important}
+  .nav-btn .nav-icon{font-size:22px!important}
+  .sidebar-resizer{display:none!important}
+  body.sidebar-collapsed{--sidebar-width:76px!important}
+  body.sidebar-collapsed .app,body.sidebar-collapsed.writing-active .app{margin-left:76px!important;width:calc(100% - 76px)!important}
+  body.sidebar-collapsed .bottom-nav{width:76px!important;padding-left:8px!important;padding-right:8px!important}
+  body.writing-active .app{margin-left:76px!important;width:calc(100% - 76px)!important;padding:10px clamp(18px,2.2vw,36px) 24px!important}
+}
+
+</style>
 </head>
 <body>
 <div class="app">
-  <header class="topbar">
-    <div class="brand"><div class="logo" aria-hidden="true">✎</div><div><h1>灵感日记</h1></div><button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="收起或展开侧栏" title="收起或展开侧栏">☰</button></div>
-  </header>
-
   <section id="homeView" class="view active">
     <div class="home-actions">
       <button class="simple-action" id="newIdea">＋ 记录灵感</button>
