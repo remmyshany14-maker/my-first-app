@@ -612,9 +612,9 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
       await syncLocalChanges();
     }catch(e){cloudStatus("检查失败："+(e.message||"网络错误"))}
   }
+  $("cloudSignIn").addEventListener("click",cloudSignIn);
+  $("cloudSignUp").addEventListener("click",()=>cloudSignUp().catch(e=>{console.error("Cloud sign-up failed:",e);cloudStatus("注册失败："+(e.message||"未知错误"))}));
   if(cloudClient){
-    $("cloudSignIn").addEventListener("click",cloudSignIn);
-    $("cloudSignUp").addEventListener("click",()=>cloudSignUp().catch(e=>{console.error("Cloud sign-up failed:",e);cloudStatus("注册失败："+(e.message||"未知错误"))}));
     $("cloudUploadLocal").addEventListener("click",()=>chooseUploadLocal(false));$("cloudDownloadRemote").addEventListener("click",chooseDownloadRemote);$("cloudMergeData").addEventListener("click",chooseMergeRemote);
     $("cloudResolveDownload").addEventListener("click",chooseDownloadRemote);$("cloudResolveMerge").addEventListener("click",chooseMergeRemote);
     $("cloudResolveUpload").addEventListener("click",()=>{if(confirm("确定用本机内容覆盖云端吗？云端当前版本可能会丢失。建议先导出备份。"))chooseUploadLocal(true)});
@@ -624,7 +624,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
     cloudClient.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){cloudUser=null;cloudSyncEnabled=false;cloudConflict=false;cloudSetPanelState();return}if(session?.user&&(!cloudUser||cloudUser.id!==session.user.id))prepareCloudForUser(session.user)});
     window.addEventListener("focus",()=>{if(cloudUser&&cloudSyncEnabled&&!cloudConflict)syncLocalChanges().catch(e=>cloudStatus("检查云端失败："+(e.message||"网络错误")))});
     document.addEventListener("visibilitychange",()=>{if(!document.hidden&&cloudUser&&cloudSyncEnabled&&!cloudConflict)syncLocalChanges().catch(()=>{})});
-  }else{cloudStatus("Supabase SDK 未加载：手机当前网络可能无法访问登录组件。请检查网络后刷新页面。");$("cloudSignIn").disabled=false;$("cloudSignUp").disabled=false;}
+  }else{cloudStatus("登录组件未加载：当前设备没有成功加载 Supabase SDK。请检查网络后刷新；若一直出现，请把这条提示发给我。");$("cloudSignIn").disabled=false;$("cloudSignUp").disabled=false;}
 
   function formatDate(value){if(!value)return "";const parts=value.split("-");return parts.length===3?parts[0]+"年"+Number(parts[1])+"月"+Number(parts[2])+"日":value}
   function sortedEntries(entries=data.entries){return [...entries].sort((a,b)=>(b.updatedAt||b.createdAt||"").localeCompare(a.updatedAt||a.createdAt||""))}
