@@ -37,8 +37,21 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) webView.goBack();
-        else super.onBackPressed();
+        if (webView == null) {
+            super.onBackPressed();
+            return;
+        }
+        // Let the web app close overlays and return through its own navigation
+        // stack before Android backgrounds the activity.
+        webView.evaluateJavascript(
+            "(function(){return typeof window.handleAndroidBack==='function' ? window.handleAndroidBack() : false;})()",
+            value -> {
+                if (!"true".equals(value)) {
+                    if (webView != null && webView.canGoBack()) webView.goBack();
+                    else moveTaskToBack(true);
+                }
+            }
+        );
     }
 
     @Override
