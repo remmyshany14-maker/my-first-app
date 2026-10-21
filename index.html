@@ -384,7 +384,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
 (() => {
   "use strict";
   const KEY = "lingganriji-data-v1";
-  const defaults = { version:1, entries:[], customTypes:[], categories:{ idea:["小说灵感","人物设定","情节片段","世界观","待整理"], diary:["日常生活","心情随笔","成长记录","待整理"] } };
+  const defaults = { version:1, entries:[], customTypes:[], categories:{ idea:["小说灵感","人物设定","情节","冲突","情节片段","世界观","待整理"], diary:["日常生活","心情随笔","成长记录","待整理"] } };
   const $ = id => document.getElementById(id);
   let data = loadData(), currentId = null, editorType = "idea", activeView = "homeView", filterType = "all", filterCategory = "all", searchTerm = "", noticeTimer;
   // Register navigation immediately so a later optional feature initialization error
@@ -414,7 +414,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
   });
   const today = () => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
   const uid = () => Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,9);
-  function loadData(){try{const raw=localStorage.getItem(KEY);if(!raw)return cloneDefaults();const parsed=JSON.parse(raw);if(!parsed||!Array.isArray(parsed.entries)||!parsed.categories)return cloneDefaults();const customTypes=unique(Array.isArray(parsed.customTypes)?parsed.customTypes:[]).filter(t=>!["idea","diary"].includes(t));const categories={idea:unique(Array.isArray(parsed.categories.idea)?parsed.categories.idea:defaults.categories.idea),diary:unique(Array.isArray(parsed.categories.diary)?parsed.categories.diary:defaults.categories.diary)};customTypes.forEach(t=>categories[t]=unique([...(Array.isArray(parsed.categories[t])?parsed.categories[t]:[]),"待整理"]));return {version:1,entries:parsed.entries.filter(e=>e&&e.id&&(["idea","diary"].includes(e.type)||customTypes.includes(e.type))),customTypes,categories}}catch(e){return cloneDefaults()}}
+  function loadData(){try{const raw=localStorage.getItem(KEY);if(!raw)return cloneDefaults();const parsed=JSON.parse(raw);if(!parsed||!Array.isArray(parsed.entries)||!parsed.categories)return cloneDefaults();const customTypes=unique(Array.isArray(parsed.customTypes)?parsed.customTypes:[]).filter(t=>!["idea","diary"].includes(t));const categories={idea:unique([...(Array.isArray(parsed.categories.idea)?parsed.categories.idea:defaults.categories.idea),"人物设定","情节","冲突"]),diary:unique(Array.isArray(parsed.categories.diary)?parsed.categories.diary:defaults.categories.diary)};customTypes.forEach(t=>categories[t]=unique([...(Array.isArray(parsed.categories[t])?parsed.categories[t]:[]),"待整理"]));return {version:1,entries:parsed.entries.filter(e=>e&&e.id&&(["idea","diary"].includes(e.type)||customTypes.includes(e.type))),customTypes,categories}}catch(e){return cloneDefaults()}}
   function cloneDefaults(){return JSON.parse(JSON.stringify(defaults))}
   function unique(arr){return [...new Set(arr.map(x=>String(x).trim()).filter(Boolean))]}
   function persist(){try{localStorage.setItem(KEY,JSON.stringify(data));scheduleCloudSync();return true}catch(e){toast("保存失败：浏览器存储空间可能不足，请先导出备份。");return false}}
