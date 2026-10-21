@@ -1,0 +1,43 @@
+name: Build Android APK
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "android/**"
+      - "index.html"
+      - ".github/workflows/android-apk.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android SDK packages
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Bundle app HTML
+        run: |
+          mkdir -p android/app/src/main/assets
+          cp index.html android/app/src/main/assets/index.html
+      - name: Build APK
+        working-directory: android
+        run: gradle assembleDebug
+      - name: Publish GitHub Release with APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release create v1.0.0 --title "灵感日记 Android v1.0.0" --notes "灵感日记安卓安装包。下载 app-debug.apk 后在安卓手机上安装。此版本为调试签名 APK。" android/app/build/outputs/apk/debug/app-debug.apk#灵感日记-v1.0.0.apk
