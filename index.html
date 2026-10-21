@@ -251,10 +251,35 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
   body.writing-active .app{margin-left:76px!important;width:calc(100% - 76px)!important;padding:10px clamp(18px,2.2vw,36px) 24px!important}
 }
 
+
+/* Restore the original app mark and name; keep the removed hamburger control hidden. */
+.topbar{display:flex!important;align-items:center!important;justify-content:flex-start!important;height:auto!important;min-height:58px!important;margin:0 0 22px!important;padding:18px 0 12px!important;border-bottom:1px solid #e7e8ec!important}
+.brand{display:flex!important;align-items:center!important;gap:10px!important}
+.logo{display:grid!important;place-items:center!important;flex:0 0 34px!important;width:34px!important;height:34px!important;border-radius:10px!important;background:linear-gradient(145deg,#9079f8,#6146cf)!important;color:#fff!important;font-size:19px!important;box-shadow:none!important}
+.brand h1{display:block!important;margin:0!important;font-size:18px!important;line-height:1.25!important;font-weight:650!important;letter-spacing:0!important;color:#252535!important}
+.brand p{display:block!important;margin:3px 0 0!important;font-size:12px!important;color:#858196!important}
+.sidebar-toggle{display:none!important}
+@media(min-width:900px){
+ body.writing-active .topbar{display:flex!important;height:auto!important;min-height:58px!important;margin:0 0 18px!important;padding:12px 0!important;border-bottom:1px solid #e7e8ec!important}
+ body.writing-active .topbar .brand{display:flex!important;width:auto!important;height:auto!important}
+ body.writing-active .topbar .brand .logo{display:grid!important}
+ body.writing-active .topbar .brand h1,body.writing-active .topbar .brand p{display:block!important}
+}
+@media(max-width:899px){
+ body.writing-active .topbar{display:flex!important;height:auto!important;min-height:58px!important;margin:0 0 12px!important;padding:12px 0!important;border-bottom:1px solid #e7e8ec!important}
+ body.writing-active .topbar .brand .logo{display:grid!important}
+ body.writing-active .topbar .brand h1,body.writing-active .topbar .brand p{display:block!important}
+}
+
 </style>
 </head>
 <body>
 <div class="app">
+  <header class="topbar">
+    <div class="brand"><div class="logo" aria-hidden="true">✎</div><div><h1>灵感日记</h1><p>收集灵感，记录生活</p></div></div>
+  </header>
+
+  
   <section id="homeView" class="view active">
     <div class="home-actions">
       <button class="simple-action" id="newIdea">＋ 记录灵感</button>
