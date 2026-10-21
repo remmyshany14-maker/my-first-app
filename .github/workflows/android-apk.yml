@@ -48,5 +48,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          gh release view v1.1.5 >/dev/null 2>&1 || gh release create v1.1.5 --title "灵感日记 Android v1.1.5" --notes "修复 Android 系统返回键的应用内导航；写作页改为居中编辑器和可展开章节导航，移除专注写作模式。包含此前的跨设备云同步优化。此版本为调试签名 APK。"
-          gh release upload v1.1.5 android/app/build/outputs/apk/debug/app-debug.apk#灵感日记-v1.1.5.apk --clobber
+          gh release view v1.1.6 >/dev/null 2>&1 || gh release create v1.1.6 --title "灵感日记 Android v1.1.6" --notes "首页改为灵感和日记两个纵向大入口，最近记录需向下滚动查看；底部导航新增分类入口，并将作品放在分类之前。包含写作页与系统返回键优化。此版本为调试签名 APK。"
+          gh release upload v1.1.6 android/app/build/outputs/apk/debug/app-debug.apk#灵感日记-v1.1.6.apk --clobber
