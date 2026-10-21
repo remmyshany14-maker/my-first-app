@@ -1,10 +1,8 @@
-const CACHE_NAME = "my-first-app-v1";
+const CACHE_NAME = "lingganriji-v2";
 const APP_FILES = ["./", "./index.html", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_FILES))
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_FILES)));
   self.skipWaiting();
 });
 
