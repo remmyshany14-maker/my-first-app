@@ -27,6 +27,13 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
+      # Keep the debug signing certificate stable across builds so future APKs
+      # can update the installed app. The first successful v1.1.7 build seeds this cache.
+      - name: Restore stable Android debug signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: lingganriji-debug-signing-v1
       - name: Use Android SDK preinstalled on runner
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
@@ -48,5 +55,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          gh release view v1.1.6 >/dev/null 2>&1 || gh release create v1.1.6 --title "灵感日记 Android v1.1.6" --notes "首页改为灵感和日记两个纵向大入口，最近记录需向下滚动查看；底部导航新增分类入口，并将作品放在分类之前。包含写作页与系统返回键优化。此版本为调试签名 APK。"
-          gh release upload v1.1.6 android/app/build/outputs/apk/debug/app-debug.apk#灵感日记-v1.1.6.apk --clobber
+          gh release view v1.1.7 >/dev/null 2>&1 || gh release create v1.1.7 --title "灵感日记 Android v1.1.7" --notes "修复网络较慢时本机界面按钮无法及时响应的问题；首页灵感/日记纵向大入口与导航顺序优化。此版本为调试签名 APK。"
+          gh release upload v1.1.7 android/app/build/outputs/apk/debug/app-debug.apk#灵感日记-v1.1.7.apk --clobber
