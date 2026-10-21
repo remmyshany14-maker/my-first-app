@@ -1,0 +1,21 @@
+{
+  "id": "./",
+  "name": "我的第一个 App",
+  "short_name": "我的 App",
+  "description": "一个可以安装到手机主屏幕的个人 App 起点。",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f7fc",
+  "theme_color": "#6757d9",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
