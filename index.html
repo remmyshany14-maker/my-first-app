@@ -494,7 +494,10 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
     }
     return false;
   }
-  await ensureSupabaseSDK();
+  // Keep the core note-taking UI responsive even when a CDN is blocked or slow.
+  // Cloud login uses the SDK if it loads quickly; otherwise the rest of the app starts first.
+  const supabaseSDKReady = ensureSupabaseSDK();
+  await Promise.race([supabaseSDKReady, new Promise(resolve => setTimeout(resolve, 1200))]);
   const KEY = "lingganriji-data-v1";
   const defaults = { version:1, entries:[], customTypes:[], categories:{ idea:["人物设定","情节","冲突","世界观","待整理"], diary:["日常生活","心情随笔","成长记录","待整理"] } };
   const $ = id => document.getElementById(id);
@@ -760,27 +763,34 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
   $("cloudSignIn").addEventListener("click",cloudSignIn);
   $("cloudSignUp").addEventListener("click",()=>cloudSignUp().catch(e=>{console.error("Cloud sign-up failed:",e);cloudStatus("注册失败："+(e.message||"未知错误"))}));
   if(cloudClient){
-    $("cloudUploadLocal").addEventListener("click",()=>chooseUploadLocal(false));$("cloudDownloadRemote").addEventListener("click",chooseDownloadRemote);$("cloudMergeData").addEventListener("click",chooseMergeRemote);
-    $("cloudResolveDownload").addEventListener("click",chooseDownloadRemote);$("cloudResolveMerge").addEventListener("click",chooseMergeRemote);
-    $("cloudResolveUpload").addEventListener("click",()=>{if(confirm("确定用本机内容覆盖云端吗？云端当前版本可能会丢失。建议先导出备份。"))chooseUploadLocal(true)});
-    $("cloudCheckNow").addEventListener("click",checkCloudNow);
-    $("cloudSignOut").addEventListener("click",async()=>{const {error}=await cloudClient.auth.signOut();if(error)cloudStatus("退出失败："+error.message);else{cloudUser=null;cloudSyncEnabled=false;cloudConflict=false;cloudSetPanelState();cloudStatus("已退出登录。本机数据仍保留。")}});
-    cloudClient.auth.getSession().then(({data,error})=>{if(error){cloudStatus("读取登录状态失败："+error.message);return}if(data.session?.user)prepareCloudForUser(data.session.user);else cloudSetPanelState()});
-    cloudClient.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){cloudUser=null;cloudSyncEnabled=false;cloudConflict=false;cloudSetPanelState();return}if(session?.user&&(!cloudUser||cloudUser.id!==session.user.id))prepareCloudForUser(session.user)});
-    window.addEventListener("focus",()=>{if(cloudUser&&cloudSyncEnabled&&!cloudConflict)syncLocalChanges().catch(e=>cloudStatus("检查云端失败："+(e.message||"网络错误")))});
-    document.addEventListener("visibilitychange",()=>{if(!document.hidden&&cloudUser&&cloudSyncEnabled&&!cloudConflict)syncLocalChanges().catch(()=>{})});
-    // Supabase Realtime is not guaranteed to be enabled for every project, so use
-    // lightweight polling as a dependable fallback. Visible devices check every 5s;
-    // backgrounded devices check every 20s and reconcile when brought back.
-    setInterval(()=>{
-      if(!cloudUser||!cloudSyncEnabled||cloudConflict||cloudBusy)return;
-      if(document.hidden){
-        if(Date.now()-(window.__lingganLastBackgroundCheck||0)<20000)return;
-        window.__lingganLastBackgroundCheck=Date.now();
-      }
-      syncLocalChanges().catch(e=>console.warn("Background cloud sync failed:",e));
-    },5000);
-  }else{cloudStatus("登录组件未加载：已尝试多个 CDN，仍无法下载 Supabase SDK。请检查手机网络/代理是否允许访问 jsDelivr 和 unpkg；本机日记数据未受影响。");$("cloudSignIn").disabled=false;$("cloudSignUp").disabled=false;}
+    try {
+      $("cloudUploadLocal").addEventListener("click",()=>chooseUploadLocal(false));$("cloudDownloadRemote").addEventListener("click",chooseDownloadRemote);$("cloudMergeData").addEventListener("click",chooseMergeRemote);
+      $("cloudResolveDownload").addEventListener("click",chooseDownloadRemote);$("cloudResolveMerge").addEventListener("click",chooseMergeRemote);
+      $("cloudResolveUpload").addEventListener("click",()=>{if(confirm("确定用本机内容覆盖云端吗？云端当前版本可能会丢失。建议先导出备份。"))chooseUploadLocal(true)});
+      $("cloudCheckNow").addEventListener("click",checkCloudNow);
+      $("cloudSignOut").addEventListener("click",async()=>{const {error}=await cloudClient.auth.signOut();if(error)cloudStatus("退出失败："+error.message);else{cloudUser=null;cloudSyncEnabled=false;cloudConflict=false;cloudSetPanelState();cloudStatus("已退出登录。本机数据仍保留。")}});
+      Promise.resolve(cloudClient.auth.getSession()).then(({data,error})=>{if(error){cloudStatus("读取登录状态失败："+error.message);return}if(data.session?.user)prepareCloudForUser(data.session.user);else cloudSetPanelState()}).catch(error=>cloudStatus("读取登录状态失败："+(error.message||"网络错误")));
+      cloudClient.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){cloudUser=null;cloudSyncEnabled=false;cloudConflict=false;cloudSetPanelState();return}if(session?.user&&(!cloudUser||cloudUser.id!==session.user.id))prepareCloudForUser(session.user)});
+      window.addEventListener("focus",()=>{if(cloudUser&&cloudSyncEnabled&&!cloudConflict)syncLocalChanges().catch(e=>cloudStatus("检查云端失败："+(e.message||"网络错误")))});
+      document.addEventListener("visibilitychange",()=>{if(!document.hidden&&cloudUser&&cloudSyncEnabled&&!cloudConflict)syncLocalChanges().catch(()=>{})});
+      // Poll as a fallback where Supabase Realtime is unavailable.
+      setInterval(()=>{
+        if(!cloudUser||!cloudSyncEnabled||cloudConflict||cloudBusy)return;
+        if(document.hidden){
+          if(Date.now()-(window.__lingganLastBackgroundCheck||0)<20000)return;
+          window.__lingganLastBackgroundCheck=Date.now();
+        }
+        syncLocalChanges().catch(e=>console.warn("Background cloud sync failed:",e));
+      },5000);
+    } catch(error) {
+      console.error("Cloud initialization failed; local app remains available:",error);
+      cloudStatus("云同步初始化失败，但本机记录功能仍可使用："+(error.message||"请稍后重试"));
+    }
+  }else{
+    cloudStatus("云端登录组件暂未加载，本机记录功能不受影响。若需要云同步，请检查网络后刷新页面。");
+    $("cloudSignIn").disabled=false;$("cloudSignUp").disabled=false;
+    supabaseSDKReady.then(loaded=>{if(loaded){cloudStatus("云端组件已加载，请刷新页面以启用登录和同步。")}});
+  }
 
   function formatDate(value){if(!value)return "";const parts=value.split("-");return parts.length===3?parts[0]+"年"+Number(parts[1])+"月"+Number(parts[2])+"日":value}
   function sortedEntries(entries=data.entries){return [...entries].sort((a,b)=>(b.updatedAt||b.createdAt||"").localeCompare(a.updatedAt||a.createdAt||""))}
