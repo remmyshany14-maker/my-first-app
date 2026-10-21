@@ -47,6 +47,18 @@ jobs:
         run: |
           mkdir -p android/app/src/main/assets
           cp index.html android/app/src/main/assets/index.html
+      - name: Check app JavaScript syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("index.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script>(.*?)</script>", html, re.S)
+          if not scripts:
+              raise SystemExit("No inline app script found")
+          Path("/tmp/lingganriji-check.js").write_text("\\n".join(scripts), encoding="utf-8")
+          PY
+          node --check /tmp/lingganriji-check.js
       - name: Build APK
         working-directory: android
         run: gradle assembleDebug
