@@ -104,6 +104,21 @@ body.editing-entry #editorView{min-height:100dvh;display:block;padding:calc(8px 
     }
 
 
+/* Keep the main navigation separate from the writing columns; retain the old collapse button without repeated branding. */
+@media(min-width:761px){
+ body.writing-active .app{margin-left:var(--sidebar-width,228px)!important}
+ body.sidebar-collapsed.writing-active .app{margin-left:72px!important}
+ body.writing-active .bottom-nav:before{display:none!important}
+ body.writing-active .topbar{display:flex!important;padding:0 0 8px!important;margin:0!important;min-height:30px}
+ body.writing-active .topbar .brand{width:100%;display:flex;align-items:center}
+ body.writing-active .topbar .brand .logo,
+ body.writing-active .topbar .brand h1{display:none!important}
+ body.writing-active .topbar .sidebar-toggle{display:inline-flex!important;margin-left:0;align-items:center;justify-content:center}
+}
+@media(max-width:760px){
+ body.writing-active .app{margin:0!important}
+ body.writing-active .topbar{display:none!important}
+}
 /* Writing workspace: no repeated branding, compact margins, flexible chapter pane */
 body.writing-active .topbar{display:none!important}
 body.writing-active .app{width:100%!important;max-width:none!important;margin:0!important;padding:10px 12px calc(18px + env(safe-area-inset-bottom))!important}
