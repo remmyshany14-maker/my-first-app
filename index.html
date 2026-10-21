@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#6757d9">
+  <meta name="description" content="一个可以安装到手机主屏幕的个人 App 起点。">
+  <title>我的第一个 App</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon.svg">
+  <style>
+    :root { color-scheme: light; --purple: #6757d9; --ink: #202033; --muted: #68687c; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; min-height: 100dvh; padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)); display: grid; place-items: center; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: radial-gradient(ellipse at top, #e9e6ff 0%, #f7f7fc 48%, #f0f3ff 100%); color: var(--ink); }
+    main { width: min(100%, 440px); }
+    .app-icon { width: 76px; height: 76px; border-radius: 23px; box-shadow: 0 12px 28px #6757d933; }
+    .eyebrow { margin: 22px 0 8px; color: var(--purple); font-size: 13px; font-weight: 700; letter-spacing: .08em; }
+    h1 { margin: 0; font-size: clamp(30px, 8vw, 40px); letter-spacing: -.04em; }
+    .intro { margin: 12px 0 26px; color: var(--muted); font-size: 16px; line-height: 1.7; }
+    .card { padding: 22px; border: 1px solid #ffffff; border-radius: 24px; background: #ffffffd9; box-shadow: 0 16px 48px #24204a0d; backdrop-filter: blur(12px); }
+    .status { display: flex; align-items: center; gap: 9px; color: #26734a; font-size: 14px; font-weight: 650; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: #35b978; box-shadow: 0 0 0 4px #35b97820; }
+    .divider { height: 1px; margin: 18px 0; background: #ececf4; }
+    .hint { margin: 0 0 18px; color: var(--muted); font-size: 14px; line-height: 1.65; }
+    button { width: 100%; min-height: 52px; padding: 14px 18px; border: 0; border-radius: 15px; background: var(--purple); color: white; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 18px #6757d933; -webkit-tap-highlight-color: transparent; }
+    button:active { transform: scale(.99); }
+    .foot { margin: 20px 0 0; text-align: center; color: #89899a; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <main>
+    <img class="app-icon" src="./icon.svg" alt="App 图标" width="76" height="76">
+    <p class="eyebrow">YOUR PERSONAL APP</p>
+    <h1>我的第一个 App</h1>
+    <p class="intro">基础版本已经就位。先把它安装到手机上，之后我们可以按你的想法，一点点添加功能。</p>
+    <section class="card" aria-live="polite">
+      <div class="status"><span class="dot"></span><span id="status">应用页面已加载</span></div>
+      <div class="divider"></div>
+      <p class="hint" id="message">这是一个可以添加到手机主屏幕的起点。点一下按钮，确认交互功能正常。</p>
+      <button id="testButton" type="button">测试一下 App</button>
+    </section>
+    <p class="foot">轻量 · 可安装 · 持续更新</p>
+  </main>
+  <script>
+    const button = document.getElementById("testButton");
+    const status = document.getElementById("status");
+    const message = document.getElementById("message");
+    let count = 0;
+    button.addEventListener("click", () => {
+      count += 1;
+      status.textContent = "运行正常 · 已点击 " + count + " 次";
+      message.textContent = "很好！按钮交互已经正常工作。下一步可以告诉我，你希望这个 App 帮你做什么。";
+      button.textContent = "再试一次（" + count + "）";
+    });
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js").catch(() => {
+          status.textContent = "页面已加载";
+        });
+      });
+    }
+  </script>
+</body>
+</html>
