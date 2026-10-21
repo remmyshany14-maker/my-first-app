@@ -388,10 +388,34 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
 </nav>
 <div class="sidebar-resizer" id="sidebarResizer" role="separator" aria-label="调整侧栏宽度" tabindex="0"></div>
 <div class="notice" id="notice" role="status" aria-live="polite" hidden></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-(() => {
+(async () => {
   "use strict";
+  // Android WebView may fail to load a third-party CDN. Try multiple UMD endpoints
+  // sequentially before initializing the app, without touching local diary data.
+  async function ensureSupabaseSDK() {
+    if (window.supabase?.createClient) return true;
+    const sources = [
+      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
+      "https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js",
+      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"
+    ];
+    for (const src of sources) {
+      const loaded = await new Promise(resolve => {
+        const script = document.createElement("script");
+        let settled = false;
+        const finish = ok => { if (settled) return; settled = true; clearTimeout(timer); script.onload = null; script.onerror = null; resolve(ok); };
+        const timer = setTimeout(() => finish(false), 7000);
+        script.onload = () => finish(!!window.supabase?.createClient);
+        script.onerror = () => finish(false);
+        script.src = src;
+        document.head.appendChild(script);
+      });
+      if (loaded) return true;
+    }
+    return false;
+  }
+  await ensureSupabaseSDK();
   const KEY = "lingganriji-data-v1";
   const defaults = { version:1, entries:[], customTypes:[], categories:{ idea:["人物设定","情节","冲突","世界观","待整理"], diary:["日常生活","心情随笔","成长记录","待整理"] } };
   const $ = id => document.getElementById(id);
@@ -624,7 +648,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
     cloudClient.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){cloudUser=null;cloudSyncEnabled=false;cloudConflict=false;cloudSetPanelState();return}if(session?.user&&(!cloudUser||cloudUser.id!==session.user.id))prepareCloudForUser(session.user)});
     window.addEventListener("focus",()=>{if(cloudUser&&cloudSyncEnabled&&!cloudConflict)syncLocalChanges().catch(e=>cloudStatus("检查云端失败："+(e.message||"网络错误")))});
     document.addEventListener("visibilitychange",()=>{if(!document.hidden&&cloudUser&&cloudSyncEnabled&&!cloudConflict)syncLocalChanges().catch(()=>{})});
-  }else{cloudStatus("登录组件未加载：当前设备没有成功加载 Supabase SDK。请检查网络后刷新；若一直出现，请把这条提示发给我。");$("cloudSignIn").disabled=false;$("cloudSignUp").disabled=false;}
+  }else{cloudStatus("登录组件未加载：已尝试多个 CDN，仍无法下载 Supabase SDK。请检查手机网络/代理是否允许访问 jsDelivr 和 unpkg；本机日记数据未受影响。");$("cloudSignIn").disabled=false;$("cloudSignUp").disabled=false;}
 
   function formatDate(value){if(!value)return "";const parts=value.split("-");return parts.length===3?parts[0]+"年"+Number(parts[1])+"月"+Number(parts[2])+"日":value}
   function sortedEntries(entries=data.entries){return [...entries].sort((a,b)=>(b.updatedAt||b.createdAt||"").localeCompare(a.updatedAt||a.createdAt||""))}
