@@ -1012,7 +1012,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
         dragging.classList.remove("dragging-chapter");clearMarkers();
         if(targetId&&targetId!==draggedId){
           const from=work.chapters.findIndex(ch=>ch.id===draggedId),to=work.chapters.findIndex(ch=>ch.id===targetId);
-          if(from>=0&&to>=0&&work.chapters[from].volumeId===work.chapters[to].volumeId){
+          if(from>=0&&to>=0&&(work.chapters[from].volumeId||"")===(work.chapters[to].volumeId||"")){
             const [item]=work.chapters.splice(from,1);let targetIndex=work.chapters.findIndex(ch=>ch.id===targetId);
             if(!dropBefore)targetIndex++;
             work.chapters.splice(targetIndex,0,item);saveWritingData();skipNextChapterClick=true;setTimeout(()=>{skipNextChapterClick=false},0);renderWriter();
