@@ -363,10 +363,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
 }
 
   
-/* Compact live writing metrics in the fourth navigation slot, inspired by Yuewen's writing assistant. */
-.nav-btn[data-view="typingHistoryView"] .live-typing-label{display:block!important;white-space:pre-line!important;text-align:center;font-size:10px!important;line-height:1.35!important;font-weight:600!important;color:inherit!important;max-width:74px;overflow-wrap:anywhere}
-@media(min-width:900px){.nav-btn[data-view="typingHistoryView"]{gap:4px!important}.nav-btn[data-view="typingHistoryView"] .live-typing-label{font-size:9px!important;max-width:68px}}
-@media(max-width:899px){.bottom-nav .nav-btn[data-view="typingHistoryView"]{min-width:76px!important}.bottom-nav .nav-btn[data-view="typingHistoryView"] .live-typing-label{font-size:9px!important}}
+/* The fourth navigation item opens the typing-speed dashboard. */
 /* Final minimal pass: remove all in-app branding and the sidebar toggle; keep a fixed, balanced icon rail. */
 .topbar,.logo,.brand h1,.brand p,.bottom-nav:before,.sidebar-toggle{display:none!important}
 @media(min-width:900px){
@@ -597,8 +594,10 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
 
 <section id="typingHistoryView" class="view">
   <div class="typing-history-page">
-    <div class="typing-history-heading"><div><p class="eyebrow">WRITING INSIGHTS</p><h2>写作历史</h2><p class="typing-history-subtitle">记录每天写了多少字、写作时长与专注时长。</p></div></div>
+    <div class="typing-history-heading"><div><p class="eyebrow">WRITING INSIGHTS</p><h2>打字速度</h2><p class="typing-history-subtitle">查看当前打字速度、正文字符数，以及每日写作历史。</p></div></div>
     <div class="typing-stat-cards">
+      <article class="typing-stat-card typing-live-speed-card"><span>当前打字速度</span><strong id="typingLiveSpeed">0 字/分钟</strong><small id="typingLiveSpeedHint">进入作品并开始输入后实时计算</small></article>
+      <article class="typing-stat-card"><span>当前章节字数</span><strong id="typingLiveChapterChars">0 字</strong><small>当前正在编辑的章节正文</small></article>
       <article class="typing-stat-card"><span>今日新增字数</span><strong id="typingTodayChars">0</strong><small>按实际新增字符统计</small></article>
       <article class="typing-stat-card"><span>今日打字时间</span><strong id="typingTodayTime">0 分钟</strong><small>最近输入后 60 秒内计时</small></article>
       <article class="typing-stat-card"><span>今日专注时间</span><strong id="typingTodayFocus">0 分钟</strong><small>连续输入间隔不超过 15 秒</small></article>
@@ -613,7 +612,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
   <button type="button" class="nav-btn active" data-view="homeView"><span class="nav-icon">⌂</span><span>首页</span></button>
   <button type="button" class="nav-btn" data-view="writingView"><span class="nav-icon">✎</span><span>作品</span></button>
   <button type="button" class="nav-btn" data-view="listView"><span class="nav-icon">▤</span><span>全部记录</span></button>
-  <button type="button" class="nav-btn" data-view="typingHistoryView" aria-label="历史记录；写作时显示当前打字速度和正文字符数"><span class="nav-icon">◷</span><span class="live-typing-label" id="liveTypingNavLabel">0 字/分<br>0 字</span></button>
+  <button type="button" class="nav-btn" data-view="typingHistoryView" aria-label="打字速度"><span class="nav-icon">⌁</span><span>打字速度</span></button>
 </nav>
 <div class="sidebar-resizer" id="sidebarResizer" role="separator" aria-label="调整侧栏宽度" tabindex="0"></div>
 <div class="notice" id="notice" role="status" aria-live="polite" hidden></div>
@@ -1135,11 +1134,14 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
   function actualTitleSafe(value){return String(value).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
   let typingLastInputAt=0,typingLastLength=0,typingSecondsSinceSave=0,typingSessionStartAt=0,typingSessionChars=0;
   function updateLiveTypingNav(){
-    const label=$("liveTypingNavLabel"),area=$("chapterBody");if(!label)return;
-    const chars=area?[...area.value].length:0,now=Date.now();
-    const speed=typingLastInputAt&&now-typingLastInputAt<=10000&&typingSessionStartAt?Math.round(typingSessionChars/Math.max(1,(now-typingSessionStartAt)/60000)):0;
-    label.textContent=speed.toLocaleString("zh-CN")+" 字/分\\n"+chars.toLocaleString("zh-CN")+" 字";
-    label.title="当前打字速度（本次编辑会话估算）与当前章节正文字符数";
+    const area=$("chapterBody"),now=Date.now();
+    const chars=area?[...area.value].length:0;
+    const active=!!(typingLastInputAt&&now-typingLastInputAt<=10000&&typingSessionStartAt);
+    const speed=active?Math.round(typingSessionChars/Math.max(1,(now-typingSessionStartAt)/60000)):0;
+    const speedEl=$("typingLiveSpeed"),charsEl=$("typingLiveChapterChars"),hint=$("typingLiveSpeedHint");
+    if(speedEl)speedEl.textContent=speed.toLocaleString("zh-CN")+" 字/分钟";
+    if(charsEl)charsEl.textContent=chars.toLocaleString("zh-CN")+" 字";
+    if(hint)hint.textContent=active?"正在根据本次编辑会话估算":"进入作品并开始输入后实时计算";
   }
   function recordTypingInput(){
     const area=$("chapterBody"),now=Date.now(),value=area.value;
