@@ -1091,6 +1091,9 @@ body:has(#typingHistoryView.active) .typing-history-page{max-width:none!importan
   }else{
     cloudStatus("云端登录组件暂未加载，本机记录功能不受影响。若需要云同步，请检查网络后刷新页面。");
     $("cloudSignIn").disabled=false;$("cloudSignUp").disabled=false;
+    // If the SDK finished loading after the initial 1.2s startup window, reload once
+    // so cloudClient and its auth listeners are initialized with the loaded SDK.
+    supabaseSDKReady.then(loaded=>{if(!loaded||cloudClient)return;try{const key="lingganriji-supabase-retry";if(!sessionStorage.getItem(key)){sessionStorage.setItem(key,"1");location.reload()}}catch(e){cloudStatus("云端组件已加载，请刷新页面以启用登录和同步。")}});
     supabaseSDKReady.then(loaded=>{if(loaded){cloudStatus("云端组件已加载，请刷新页面以启用登录和同步。")}});
   }
 
