@@ -137,6 +137,18 @@ body.editing-entry #editorView{min-height:100dvh;display:block;padding:calc(8px 
 .work-elements-toolbar button{white-space:nowrap}
 #workElementText{width:100%;box-sizing:border-box;font:inherit;line-height:1.7}
 @media(max-width:620px){.work-elements-toolbar{justify-content:flex-start;gap:6px;margin-bottom:10px}.work-elements-toolbar .small-btn{padding:7px 10px}}
+.sidebar-work-settings{margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
+.sidebar-settings-heading{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
+.sidebar-settings-heading strong{font-size:13px}
+.sidebar-settings-heading span{font-size:11px;color:var(--muted)}
+.writer-side .work-elements-toolbar{justify-content:flex-start;align-items:flex-start;gap:6px;margin:0;display:flex}
+.writer-side .work-elements-toolbar .work-element-tab{max-width:100%}
+.writer-side .work-elements-toolbar .small-btn{padding:6px 8px;font-size:12px;white-space:normal}
+.chapter-item{touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:pointer}
+.chapter-item.drag-ready{cursor:grab}
+.chapter-item.dragging-chapter{opacity:.4;border:1px dashed var(--purple-dark)}
+.chapter-item.drop-before{border-top:2px solid var(--purple-dark)}
+.chapter-item.drop-after{border-bottom:2px solid var(--purple-dark)}
 /* Keep the chapter navigation panel compact instead of stretching to match the tall editor. */
 body.writing-active .writer-layout{align-items:start!important}
 body.writing-active .writer-side{height:auto!important;min-height:0!important;max-height:calc(100dvh - 100px)!important;align-self:start!important;overflow-y:auto!important}
@@ -472,10 +484,10 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
         <div class="section-head" style="margin-top:0"><div><h3 id="chapterGroupHeading">章节导航</h3><p class="subtle" id="chapterNavCurrent" style="margin:4px 0 0">当前作品</p></div></div>
         <button type="button" class="primary small-btn" id="createChapterSide" style="width:100%;margin:0 0 10px">＋ 新建章节</button>
         <div id="chapterList" class="chapter-list"><div class="writer-empty">先创建或选择一部作品。</div></div>
+        <section class="sidebar-work-settings"><div class="sidebar-settings-heading"><strong>作品设定</strong><span>点击打开 · 可添加标签</span></div><div class="work-elements-toolbar" id="workElementsToolbar" aria-label="作品设定标签"></div></section>
       </aside>
       <div class="writer-resizer" id="writerResizer" role="separator" aria-orientation="vertical" aria-label="调整章节栏宽度" tabindex="0"></div>
       <section class="writer-main">
-        <div class="work-elements-toolbar" id="workElementsToolbar" aria-label="作品设定"><button type="button" class="secondary small-btn" data-work-element="outline">大纲</button><button type="button" class="secondary small-btn" data-work-element="characters">人设</button><button type="button" class="secondary small-btn" data-work-element="worldview">世界观</button><button type="button" class="secondary small-btn" data-work-element="other">其他设定</button><button type="button" class="secondary small-btn work-element-add" id="addWorkElement" aria-label="添加设定标签" title="添加自定义设定">＋</button></div>
         <div id="writerEmpty" class="empty writer-empty-start"><div class="empty-icon">✒</div><strong>开始写作</strong><p>当前作品还没有章节。请在左侧章节导航中点击「新建章节」开始写作。</p></div>
         <div id="chapterEditor" class="hidden">
           <input id="chapterTitle" class="text-input writer-title" maxlength="120" placeholder="章节标题，例如：第一章 初见" aria-label="章节标题">
@@ -917,9 +929,50 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
     grid.querySelectorAll("[data-delete-work]").forEach(btn=>btn.addEventListener("click",e=>{e.stopPropagation();const w=writingData.works.find(x=>x.id===btn.dataset.deleteWork);if(!w||!confirm("确定删除作品「"+w.title+"」及其全部章节吗？此操作无法撤销。"))return;writingData.works=writingData.works.filter(x=>x.id!==w.id);if(activeWorkId===w.id){activeWorkId=null;activeChapterId=null}saveWritingData();renderWriter();toast("作品已删除")}));
     const w=currentWork();$("chapterGroupHeading").textContent=w?(w.title||"未命名作品"):"未选择作品";$("chapterNavCurrent").textContent="共 "+(w?w.chapters.length:0)+" 章";$("createChapterSide").disabled=!w;$("exportChapter").disabled=!currentChapter();$("writerEmpty").classList.toggle("hidden",!!currentChapter());$("chapterEditor").classList.toggle("hidden",!currentChapter());
     $("chapterList").innerHTML=w?(w.chapters.length?w.chapters.map((c,i)=>'<button class="chapter-item '+(c.id===activeChapterId?'active':'')+'" data-chapter="'+escapeHTML(c.id)+'"><span class="chapter-item-title">'+escapeHTML(c.title||("第"+(i+1)+"章 未命名"))+'</span><span class="chapter-item-count">'+[...(c.body||"")].length.toLocaleString("zh-CN")+' 字</span></button>').join(""):'<div class="writer-empty">还没有章节</div>'):'<div class="writer-empty">先创建或选择一部作品</div>';
-    $("chapterList").querySelectorAll("[data-chapter]").forEach(btn=>btn.addEventListener("click",()=>{flushWriterSave();activeChapterId=btn.dataset.chapter;renderWriter()}));
+    let skipNextChapterClick=false;
+    $("chapterList").querySelectorAll("[data-chapter]").forEach(btn=>btn.addEventListener("click",()=>{if(skipNextChapterClick){skipNextChapterClick=false;return}flushWriterSave();activeChapterId=btn.dataset.chapter;renderWriter()}));
+    if(w)bindChapterReordering(w);
     const c=currentChapter();if(c){$("chapterTitle").value=c.title||"";$("chapterBody").value=c.body||"";updateWriterCount()}else{$("chapterTitle").value="";$("chapterBody").value="";$("chapterWordCount").textContent="0 字";$("writerSaveStatus").textContent=""}
     
+  }
+  function bindChapterReordering(work){
+    const list=$("chapterList");let pressTimer=null,dragging=null,startX=0,startY=0,moved=false;
+    const clearPress=()=>{if(pressTimer){clearTimeout(pressTimer);pressTimer=null}};
+    list.querySelectorAll("[data-chapter]").forEach(btn=>{
+      btn.classList.add("drag-ready");
+      btn.addEventListener("pointerdown",e=>{
+        if(e.button!==undefined&&e.button!==0)return;
+        clearPress();dragging=null;moved=false;startX=e.clientX;startY=e.clientY;
+        try{btn.setPointerCapture(e.pointerId)}catch(_){}
+        pressTimer=setTimeout(()=>{pressTimer=null;dragging=btn;btn.classList.add("dragging-chapter");},380);
+      });
+      btn.addEventListener("pointermove",e=>{
+        if(!dragging&&Math.hypot(e.clientX-startX,e.clientY-startY)>9)clearPress();
+        if(!dragging)return;
+        const target=document.elementFromPoint(e.clientX,e.clientY)?.closest("#chapterList [data-chapter]");
+        list.querySelectorAll(".drop-before,.drop-after").forEach(el=>el.classList.remove("drop-before","drop-after"));
+        if(!target||target===dragging)return;
+        const rect=target.getBoundingClientRect(),before=e.clientY<rect.top+rect.height/2;
+        target.classList.add(before?"drop-before":"drop-after");
+        list.insertBefore(dragging,before?target:target.nextSibling);moved=true;
+      });
+      const finish=e=>{
+        clearPress();
+        if(!dragging)return;
+        const didMove=moved;dragging.classList.remove("dragging-chapter");
+        list.querySelectorAll(".drop-before,.drop-after").forEach(el=>el.classList.remove("drop-before","drop-after"));
+        if(didMove){
+          const order=[...list.querySelectorAll("[data-chapter]")].map(el=>el.dataset.chapter);
+          const byId=new Map(work.chapters.map(ch=>[ch.id,ch]));
+          work.chapters=order.map(id=>byId.get(id)).filter(Boolean);
+          saveWritingData();skipNextChapterClick=true;setTimeout(()=>{skipNextChapterClick=false},0);renderWriter();
+        }
+        dragging=null;moved=false;
+      };
+      btn.addEventListener("pointerup",finish);
+      btn.addEventListener("pointercancel",()=>{clearPress();if(dragging)dragging.classList.remove("dragging-chapter");dragging=null;moved=false});
+      btn.addEventListener("contextmenu",e=>{if(dragging)e.preventDefault()});
+    });
   }
   function flushWriterSave(){if(writerSaveTimer){clearTimeout(writerSaveTimer);writerSaveTimer=null;saveCurrentChapter()}}
   function saveCurrentChapter(){const c=currentChapter();if(!c)return;c.title=$("chapterTitle").value.trim();c.body=$("chapterBody").value;c.updatedAt=new Date().toISOString();const w=currentWork();if(w){w.updatedAt=c.updatedAt;const def=getWorkElementDefs(w).find(d=>d.title.trim().toLocaleLowerCase()===c.title.trim().toLocaleLowerCase());if(def){setWorkElementValue(def,c.body,w);document.querySelectorAll("#workElementWindows .work-element-float").forEach(panel=>{if(panel.dataset.workId===w.id&&panel.dataset.elementId===def.id){const area=panel.querySelector("[data-element-notes]");if(area&&document.activeElement!==area)area.value=c.body;const status=panel.querySelector("[data-element-status]");if(status)status.textContent="已同步"}})}}saveWritingData();const btn=$("chapterList").querySelector('[data-chapter="'+CSS.escape(c.id)+'"]');if(btn){const title=btn.querySelector(".chapter-item-title");if(title)title.textContent=c.title||("第"+(w.chapters.findIndex(x=>x.id===c.id)+1)+"章 未命名");const count=btn.querySelector(".chapter-item-count");if(count)count.textContent=[...(c.body||"")].length.toLocaleString("zh-CN")+" 字";}}
