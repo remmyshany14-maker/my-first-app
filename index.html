@@ -182,7 +182,7 @@ body.editing-entry #editorView{min-height:100dvh;display:block;padding:calc(8px 
 .volume-controls select{width:100%;min-width:0;font-size:12px;padding:7px}
 .volume-help{font-size:10px;line-height:1.5;color:var(--muted);margin:6px 0 0}
 .chapter-volume-group{margin:8px 0}
-.chapter-volume-heading{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--muted);padding:5px 8px;border-bottom:1px solid var(--line);margin-bottom:5px;cursor:grab;touch-action:pan-y;user-select:none}
+.chapter-volume-heading{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--muted);padding:5px 8px;border-bottom:1px solid var(--line);margin-bottom:5px;cursor:default;touch-action:pan-y;user-select:none}.volume-collapse-toggle{display:grid;place-items:center;flex:0 0 22px;width:22px;height:26px;padding:0;border:0;border-radius:5px;background:transparent;color:#82769f;font-size:16px;line-height:1;cursor:pointer}.volume-collapse-toggle:hover:not(:disabled){background:var(--lavender);color:var(--purple-dark)}.volume-collapse-toggle:disabled{opacity:.25;cursor:default}.volume-drag-spacer{flex:0 0 22px;width:22px}.volume-chapter-count{font-size:10px;font-weight:500;color:#a09aad;white-space:nowrap}.volume-empty-drop{padding:9px 12px;margin:4px 0 8px;border:1px dashed #ded8ed;border-radius:8px;color:#aaa3b5;font-size:11px;text-align:center}.chapter-volume-heading.volume-drop-chapters{background:#eee8ff;border:1px dashed var(--purple);border-radius:8px}.chapter-volume-group.volume-collapsed{padding-bottom:3px}.chapter-volume-group.volume-collapsed .chapter-volume-heading{margin-bottom:8px}
 .volume-drag-grip{display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;padding:0;border:1px solid #e7e1f2;border-radius:7px;background:#fff;color:#8f80b5;font:inherit;font-size:17px;line-height:1;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}.volume-drag-grip:hover{background:var(--lavender);border-color:#d8ceff;color:var(--purple-dark)}.volume-drag-grip:active{cursor:grabbing;background:#eee8ff}
 .chapter-volume-heading.volume-dragging{opacity:.55;background:var(--lavender)}
 .chapter-volume-heading.volume-drop-before{border-top:2px solid var(--purple)}
@@ -987,9 +987,10 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
     const w=currentWork();$("chapterGroupHeading").textContent=w?(w.title||"未命名作品"):"未选择作品";$("chapterNavCurrent").textContent="共 "+(w?w.chapters.length:0)+" 章";$("createChapterSide").disabled=!w;$("exportChapter").disabled=!currentChapter();$("writerEmpty").classList.toggle("hidden",!!currentChapter());$("chapterEditor").classList.toggle("hidden",!currentChapter());
     if(w){if(!Array.isArray(w.volumes))w.volumes=[];w.chapters.forEach(c=>{if(c.volumeId&&!w.volumes.some(v=>v.id===c.volumeId))c.volumeId=""})}
     const chapterButton=(c,i)=>'<div class="chapter-item '+(c.id===activeChapterId?'active':'')+'" data-chapter="'+escapeHTML(c.id)+'" role="button" tabindex="0"><span class="chapter-item-title">'+escapeHTML(c.title||("第"+(i+1)+"章 未命名"))+'</span><span class="chapter-item-count">'+[...(c.body||"")].length.toLocaleString("zh-CN")+' 字</span><button type="button" class="chapter-nav-delete" data-delete-chapter="'+escapeHTML(c.id)+'" aria-label="删除章节" title="删除章节">×</button><button type="button" class="chapter-drag-handle" data-chapter-drag aria-label="按住拖动调整章节顺序" title="按住拖动排序">⠿</button></div>';
-    $("chapterList").innerHTML=w?(w.chapters.length?(()=>{const groups=[];const unassigned=w.chapters.filter(c=>!c.volumeId);if(unassigned.length)groups.push({id:"",title:"未分卷",chapters:unassigned});(w.volumes||[]).forEach(v=>{const chapters=w.chapters.filter(c=>c.volumeId===v.id);if(chapters.length)groups.push({id:v.id,title:v.title,chapters})});return groups.map(g=>'<div class="chapter-volume-group" data-volume-group="'+escapeHTML(g.id)+'"><div class="chapter-volume-heading" '+(g.id?'data-volume-drag="'+escapeHTML(g.id)+'" title="按住拖动调整卷顺序" tabindex="0"':'')+'><button type="button" class="volume-drag-grip" data-volume-drag-handle="'+escapeHTML(g.id)+'" aria-label="按住拖动调整卷顺序" title="按住拖动调整卷顺序">⠿</button><span class="volume-heading-title">'+escapeHTML(g.title)+'</span>'+(g.id?'<span class="volume-rename-hint">双击改名</span>':'')+'</div>'+g.chapters.map(c=>chapterButton(c,w.chapters.indexOf(c))).join("")+'</div>').join("")})():'<div class="writer-empty">还没有章节</div>'):'<div class="writer-empty">先创建或选择一部作品</div>';
+    $("chapterList").innerHTML=w?(()=>{const groups=[];const unassigned=w.chapters.filter(c=>!c.volumeId);if(unassigned.length)groups.push({id:"",title:"未分卷",chapters:unassigned,collapsed:false});(w.volumes||[]).forEach(v=>{const chapters=w.chapters.filter(c=>c.volumeId===v.id);groups.push({id:v.id,title:v.title,chapters,collapsed:!!v.collapsed})});return groups.length?groups.map(g=>'<div class="chapter-volume-group '+(g.collapsed?'volume-collapsed':'')+'" data-volume-group="'+escapeHTML(g.id)+'"><div class="chapter-volume-heading" '+(g.id?'data-volume-drag="'+escapeHTML(g.id)+'" title="双击卷名改名；拖动按钮可调整卷顺序" tabindex="0"':'')+'><button type="button" class="volume-collapse-toggle" data-volume-toggle="'+escapeHTML(g.id)+'" '+(!g.id?'disabled':'')+' aria-label="'+(g.collapsed?'展开':'折叠')+'章节" title="'+(g.collapsed?'展开章节':'折叠章节')+'">'+(g.collapsed?'▸':'▾')+'</button>'+(g.id?'<button type="button" class="volume-drag-grip" data-volume-drag-handle aria-label="按住拖动调整卷顺序" title="按住拖动调整卷顺序">⠿</button>':'<span class="volume-drag-spacer"></span>')+'<span class="volume-heading-title">'+escapeHTML(g.title)+'</span>'+(g.id?'<span class="volume-chapter-count">'+g.chapters.length+' 章</span><span class="volume-rename-hint">双击改名</span>':'')+'</div>'+(!g.chapters.length?'<div class="volume-empty-drop">将章节拖到这里</div>':'')+(g.collapsed?'':'<div class="volume-chapters">'+g.chapters.map(c=>chapterButton(c,w.chapters.indexOf(c))).join("")+'</div>')+'</div>').join(""):'<div class="writer-empty">还没有章节</div>'})():'<div class="writer-empty">先创建或选择一部作品</div>';
     renderChapterVolumeSelect(w,currentChapter());
     let skipNextChapterClick=false;
+    $("chapterList").querySelectorAll("[data-volume-toggle]").forEach(btn=>btn.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();const id=btn.dataset.volumeToggle;if(!id)return;const v=currentWork()?.volumes?.find(x=>x.id===id);if(!v)return;v.collapsed=!v.collapsed;saveWritingData();renderWriter()}));
     $("chapterList").querySelectorAll("[data-delete-chapter]").forEach(btn=>btn.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();deleteChapterFromNav(btn.dataset.deleteChapter)}));
     $("chapterList").querySelectorAll("[data-volume-drag]").forEach(head=>head.addEventListener("dblclick",e=>{if(e.target.closest("[data-volume-drag-handle]"))return;e.preventDefault();e.stopPropagation();renameWorkVolume(head.dataset.volumeDrag)}));
     $("chapterList").querySelectorAll("[data-chapter]").forEach(btn=>{btn.addEventListener("click",e=>{if(e.target.closest("[data-chapter-drag], [data-delete-chapter]"))return;if(skipNextChapterClick){skipNextChapterClick=false;return}flushWriterSave();activeChapterId=btn.dataset.chapter;renderWriter()});btn.addEventListener("keydown",e=>{if(e.target!==btn)return;if(e.key==="Enter"||e.key===" "){e.preventDefault();flushWriterSave();activeChapterId=btn.dataset.chapter;renderWriter()}})});
@@ -1005,45 +1006,65 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
   function deleteChapterFromNav(id){const w=currentWork(),c=w?.chapters.find(x=>x.id===id);if(!w||!c)return;if(!confirm("确定删除章节「"+(c.title||"未命名章节")+"」吗？删除后无法撤销。"))return;flushWriterSave();w.chapters=w.chapters.filter(x=>x.id!==id);if(activeChapterId===id)activeChapterId=w.chapters[0]?.id||null;saveWritingData();renderWriter();toast("章节已删除")}
   function changeChapterVolume(){flushWriterSave();const w=currentWork(),c=currentChapter();if(!w||!c)return;c.volumeId=$("chapterVolumeSelect").value||"";w.updatedAt=new Date().toISOString();saveWritingData();renderWriter()}
   function bindChapterReordering(work){
-    const list=$("chapterList");let pressTimer=null,dragging=null,startX=0,startY=0,dropTarget=null,dropBefore=true,moved=false;
+    const list=$("chapterList");let pressTimer=null,dragging=null,startX=0,startY=0,dropTarget=null,dropBefore=true;
     const clearPress=()=>{if(pressTimer){clearTimeout(pressTimer);pressTimer=null}};
-    const clearMarkers=()=>list.querySelectorAll(".drop-before,.drop-after").forEach(el=>el.classList.remove("drop-before","drop-after"));
+    const clearMarkers=()=>list.querySelectorAll(".drop-before,.drop-after,.volume-drop-chapters").forEach(el=>el.classList.remove("drop-before","drop-after","volume-drop-chapters"));
     list.querySelectorAll("[data-chapter]").forEach(btn=>{
       btn.classList.add("drag-ready");
       btn.addEventListener("pointerdown",e=>{
         if(e.button!==undefined&&e.button!==0)return;if(!e.target.closest("[data-chapter-drag]"))return;
-        clearPress();dragging=null;dropTarget=null;moved=false;startX=e.clientX;startY=e.clientY;
+        clearPress();dragging=null;dropTarget=null;startX=e.clientX;startY=e.clientY;
         try{btn.setPointerCapture(e.pointerId)}catch(_){}
         pressTimer=setTimeout(()=>{pressTimer=null;dragging=btn;btn.classList.add("dragging-chapter");},260);
       });
       btn.addEventListener("pointermove",e=>{
         if(!dragging&&Math.hypot(e.clientX-startX,e.clientY-startY)>9)clearPress();
         if(!dragging)return;
-        const target=document.elementFromPoint(e.clientX,e.clientY)?.closest("#chapterList [data-chapter]");
         clearMarkers();dropTarget=null;
-        if(!target||target===dragging)return;
-        // Reorder within the same volume group; chapters remain assigned to their chosen volume.
-        if((target.closest("[data-volume-group]")?.dataset.volumeGroup||"")!==(dragging.closest("[data-volume-group]")?.dataset.volumeGroup||""))return;
-        const rect=target.getBoundingClientRect();dropBefore=e.clientY<rect.top+rect.height/2;dropTarget=target;
-        target.classList.add(dropBefore?"drop-before":"drop-after");
+        const under=document.elementFromPoint(e.clientX,e.clientY);
+        const targetChapter=under?.closest("#chapterList [data-chapter]");
+        if(targetChapter&&targetChapter!==dragging){
+          const group=targetChapter.closest("[data-volume-group]");
+          const rect=targetChapter.getBoundingClientRect();
+          dropBefore=e.clientY<rect.top+rect.height/2;
+          dropTarget={type:"chapter",id:targetChapter.dataset.chapter,volumeId:group?.dataset.volumeGroup||""};
+          targetChapter.classList.add(dropBefore?"drop-before":"drop-after");
+          return;
+        }
+        const targetGroup=under?.closest("#chapterList [data-volume-group]");
+        if(targetGroup){
+          const id=targetGroup.dataset.volumeGroup||"";
+          if(id!==(dragging.closest("[data-volume-group]")?.dataset.volumeGroup||"")){
+            dropTarget={type:"volume",id,volumeId:id};
+            targetGroup.querySelector(".chapter-volume-heading")?.classList.add("volume-drop-chapters");
+          }
+        }
       });
       const finish=()=>{
         clearPress();
         if(!dragging)return;
-        const draggedId=dragging.dataset.chapter,targetId=dropTarget?.dataset.chapter;
+        const draggedId=dragging.dataset.chapter;
         dragging.classList.remove("dragging-chapter");clearMarkers();
-        if(targetId&&targetId!==draggedId){
-          const from=work.chapters.findIndex(ch=>ch.id===draggedId),to=work.chapters.findIndex(ch=>ch.id===targetId);
-          if(from>=0&&to>=0&&(work.chapters[from].volumeId||"")===(work.chapters[to].volumeId||"")){
-            const [item]=work.chapters.splice(from,1);let targetIndex=work.chapters.findIndex(ch=>ch.id===targetId);
-            if(!dropBefore)targetIndex++;
-            work.chapters.splice(targetIndex,0,item);saveWritingData();skipNextChapterClick=true;setTimeout(()=>{skipNextChapterClick=false},0);renderWriter();
+        const from=work.chapters.findIndex(ch=>ch.id===draggedId);
+        if(from>=0&&dropTarget){
+          const [item]=work.chapters.splice(from,1);
+          item.volumeId=dropTarget.volumeId||"";
+          let pos;
+          if(dropTarget.type==="chapter"){
+            pos=work.chapters.findIndex(ch=>ch.id===dropTarget.id);
+            if(pos>=0&&!dropBefore)pos++;
+            if(pos<0)pos=work.chapters.length;
+          }else{
+            const inVolume=work.chapters.map((ch,i)=>({ch,i})).filter(x=>(x.ch.volumeId||"")===(dropTarget.volumeId||""));
+            pos=inVolume.length?inVolume[inVolume.length-1].i+1:work.chapters.length;
           }
+          work.chapters.splice(pos,0,item);
+          flushWriterSave();saveWritingData();skipNextChapterClick=true;setTimeout(()=>{skipNextChapterClick=false},0);renderWriter();
         }
-        dragging=null;dropTarget=null;moved=false;
+        dragging=null;dropTarget=null;
       };
       btn.addEventListener("pointerup",finish);
-      btn.addEventListener("pointercancel",()=>{clearPress();if(dragging)dragging.classList.remove("dragging-chapter");clearMarkers();dragging=null;dropTarget=null;moved=false});
+      btn.addEventListener("pointercancel",()=>{clearPress();if(dragging)dragging.classList.remove("dragging-chapter");clearMarkers();dragging=null;dropTarget=null});
       btn.addEventListener("contextmenu",e=>{if(dragging)e.preventDefault()});
     });
   }
