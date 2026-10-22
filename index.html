@@ -981,7 +981,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
   }
   function renderChapterVolumeSelect(work,chapter){const select=$("chapterVolumeSelect");if(!select)return;select.innerHTML='<option value="">不分卷</option>'+((work?.volumes)||[]).map(v=>'<option value="'+escapeHTML(v.id)+'">'+escapeHTML(v.title)+'</option>').join("");select.disabled=!work||!chapter;select.value=chapter?.volumeId||""}
   function addWorkVolume(){const w=currentWork();if(!w)return;const title=prompt("请输入卷名，例如：第一卷 初入京城");if(title===null)return;const clean=title.trim();if(!clean)return toast("卷名不能为空");if(!Array.isArray(w.volumes))w.volumes=[];if(w.volumes.some(v=>v.title.toLocaleLowerCase()===clean.toLocaleLowerCase()))return toast("已有同名卷");const volume={id:"vol_"+uid(),title:clean};w.volumes.push(volume);const c=currentChapter();if(c)c.volumeId=volume.id;saveWritingData();renderWriter();toast("已创建「"+clean+"」")}
-  function changeChapterVolume(){const w=currentWork(),c=currentChapter();if(!w||!c)return;c.volumeId=$("chapterVolumeSelect").value||"";w.updatedAt=new Date().toISOString();saveWritingData();renderWriter()}
+  function changeChapterVolume(){flushWriterSave();const w=currentWork(),c=currentChapter();if(!w||!c)return;c.volumeId=$("chapterVolumeSelect").value||"";w.updatedAt=new Date().toISOString();saveWritingData();renderWriter()}
   function bindChapterReordering(work){
     const list=$("chapterList");let pressTimer=null,dragging=null,startX=0,startY=0,moved=false;
     const clearPress=()=>{if(pressTimer){clearTimeout(pressTimer);pressTimer=null}};
