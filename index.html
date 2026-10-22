@@ -1148,13 +1148,22 @@ body:has(#typingHistoryView.active) .typing-history-page{max-width:none!importan
   }
   function recordTypingInput(){
     const area=$("chapterBody"),now=Date.now(),value=area.value;
-    if(typingLastLength<0)typingLastLength=0;
-    let prefix=0;while(prefix<typingLastLength&&prefix<value.length&&typingPreviousValue[prefix]===value[prefix])prefix++;
-    let suffix=0;while(suffix<typingLastLength-prefix&&suffix<value.length-prefix&&typingPreviousValue[typingPreviousValue.length-1-suffix]===value[value.length-1-suffix])suffix++;
-    const inserted=Math.max(0,value.length-prefix-suffix);
-    if(inserted){dayStats().chars+=inserted;hourStats(hourKey(new Date(now))).chars+=inserted;saveWritingData();if(!typingSessionStartAt)typingSessionStartAt=now;typingSessionChars+=inserted}
-    typingPreviousValue=value;typingLastLength=value.length;typingLastInputAt=now;updateLiveTypingNav();
-    if(activeView==="typingHistoryView")renderTypingHistory();
+    // Compare Unicode characters rather than UTF-16 code units so emoji/surrogate pairs do not inflate the count.
+    const previous=[...typingPreviousValue],current=[...value];
+    let prefix=0;while(prefix<previous.length&&prefix<current.length&&previous[prefix]===current[prefix])prefix++;
+    let suffix=0;while(suffix<previous.length-prefix&&suffix<current.length-prefix&&previous[previous.length-1-suffix]===current[current.length-1-suffix])suffix++;
+    const inserted=Math.max(0,current.length-prefix-suffix);
+    if(inserted){
+      dayStats().chars+=inserted;
+      hourStats(hourKey(new Date(now))).chars+=inserted;
+      if(!typingSessionStartAt)typingSessionStartAt=now;
+      typingSessionChars+=inserted;
+      saveWritingData();
+    }
+    typingPreviousValue=value;typingLastLength=value.length;typingLastInputAt=now;
+    updateLiveTypingNav();
+    // Keep the fourth tab's totals in sync while text is being added in the Works tab.
+    renderTypingHistory();
   }
   let typingPreviousValue="";
   setInterval(()=>{if(!typingLastInputAt)return;const area=$("chapterBody"),now=Date.now();if(document.activeElement!==area||!currentChapter()||now-typingLastInputAt>15000)return;const d=dayStats(),h=hourStats(hourKey(new Date(now)));d.typingSeconds=(d.typingSeconds||0)+1;h.typingSeconds=(h.typingSeconds||0)+1;d.focusSeconds=(d.focusSeconds||0)+1;typingSecondsSinceSave++;if(typingSecondsSinceSave>=10){typingSecondsSinceSave=0;saveWritingData()}updateLiveTypingNav();if(activeView==="typingHistoryView")renderTypingHistory()},1000);
