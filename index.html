@@ -603,9 +603,9 @@ body:has(#typingHistoryView.active) .typing-history-page{max-width:none!importan
       <article class="typing-stat-card typing-live-speed-card"><span>当前打字速度</span><strong id="typingLiveSpeed">0 字/分钟</strong><small id="typingLiveSpeedHint">进入作品并开始输入后实时计算</small></article>
       <article class="typing-stat-card"><span>当前章节字数</span><strong id="typingLiveChapterChars">0 字</strong><small>当前正在编辑的章节正文</small></article>
       <article class="typing-stat-card"><span>今日新增字数</span><strong id="typingTodayChars">0</strong><small>按实际新增字符统计</small></article>
-      <article class="typing-stat-card"><span>今日打字时间</span><strong id="typingTodayTime">0 分钟</strong><small>最近输入后 60 秒内计时</small></article>
+      <article class="typing-stat-card"><span>今日打字时间</span><strong id="typingTodayTime">0 分钟</strong><small>停止输入 60 秒后暂停计时</small></article>
       <article class="typing-stat-card"><span>今日专注时间</span><strong id="typingTodayFocus">0 分钟</strong><small>连续输入间隔不超过 15 秒</small></article>
-      <article class="typing-stat-card"><span>平均打字速度</span><strong id="typingTodaySpeed">0 字/分钟</strong><small>新增字符 ÷ 打字时间</small></article>
+      <article class="typing-stat-card"><span>本小时预计速度</span><strong id="typingTodaySpeed">0 字/小时</strong><small>本小时累计新增字数 ÷ 本小时打字时间 × 60 分钟</small></article>
     </div>
     <div class="typing-calendar-card"><div class="typing-section-title typing-calendar-heading"><h3>每日写作日历</h3><div class="typing-calendar-controls"><button type="button" class="secondary small-btn" id="typingCalendarPrev" aria-label="上个月">‹</button><strong id="typingMonthSummary">2026 年 10 月</strong><button type="button" class="secondary small-btn" id="typingCalendarNext" aria-label="下个月">›</button></div></div><p class="typing-history-subtitle">每个日期显示当天实际记录的新增字数；“—”表示当时尚未采集到字数统计。</p><div class="typing-calendar-weekdays" aria-hidden="true"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div><div id="typingCalendar" class="typing-calendar" aria-label="每日新增字数日历"></div><p id="typingHistoryEmpty" class="typing-history-empty" hidden>本月还没有可显示的打字统计。开始在作品章节中输入后，每日新增字数会自动记录在对应日期下。</p></div>
   </div>
@@ -758,7 +758,7 @@ body:has(#typingHistoryView.active) .typing-history-page{max-width:none!importan
       const aa=new Set(a.categories[type]),bb=new Set(b.categories[type]),defaultsSet=new Set(cloneDefaults().categories[type]);
       return merged.filter(c=>defaultsSet.has(c)||!base.categories[type].includes(c)||(aa.has(c)&&bb.has(c)));
     }
-    const customTypes=unique([...a.customTypes,...b.customTypes]);const categories={};["idea","diary",...customTypes].forEach(type=>{const merged=unique([...(a.categories[type]||[]),...(b.categories[type]||[])]);if(!base){categories[type]=merged;return}const aa=new Set(a.categories[type]||[]),bb=new Set(b.categories[type]||[]),baseCats=new Set(base.categories[type]||[]),def=new Set(cloneDefaults().categories[type]||[]);categories[type]=merged.filter(c=>!baseCats.has(c)||(aa.has(c)&&bb.has(c)))});const typingDays={...(a.writingData.typingStats?.days||{})};Object.entries(b.writingData.typingStats?.days||{}).forEach(([day,value])=>{const prev=typingDays[day]||{};typingDays[day]={chars:Math.max(prev.chars||0,value?.chars||0),typingSeconds:Math.max(prev.typingSeconds||0,value?.typingSeconds||0),focusSeconds:Math.max(prev.focusSeconds||0,value?.focusSeconds||0)}});return {version:2,entries:[...entries.values()],customTypes,categories,writingData:{works:[...works.values()],typingStats:{days:typingDays}}};
+    const customTypes=unique([...a.customTypes,...b.customTypes]);const categories={};["idea","diary",...customTypes].forEach(type=>{const merged=unique([...(a.categories[type]||[]),...(b.categories[type]||[])]);if(!base){categories[type]=merged;return}const aa=new Set(a.categories[type]||[]),bb=new Set(b.categories[type]||[]),baseCats=new Set(base.categories[type]||[]),def=new Set(cloneDefaults().categories[type]||[]);categories[type]=merged.filter(c=>!baseCats.has(c)||(aa.has(c)&&bb.has(c)))});const typingDays={...(a.writingData.typingStats?.days||{})};Object.entries(b.writingData.typingStats?.days||{}).forEach(([day,value])=>{const prev=typingDays[day]||{};typingDays[day]={chars:Math.max(prev.chars||0,value?.chars||0),typingSeconds:Math.max(prev.typingSeconds||0,value?.typingSeconds||0),focusSeconds:Math.max(prev.focusSeconds||0,value?.focusSeconds||0)}});return {version:2,entries:[...entries.values()],customTypes,categories,writingData:{works:[...works.values()],typingStats:{days:typingDays,hours:{...(a.writingData.typingStats?.hours||{}),...(b.writingData.typingStats?.hours||{})}}}};
   }
   function countPayload(value){const p=normalizePayload(value);return p.entries.length+" 条记录（灵感 "+p.entries.filter(e=>e.type==="idea").length+"，日记 "+p.entries.filter(e=>e.type==="diary").length+"），"+p.writingData.works.length+" 部作品"}
   function saveSyncedBaseline(payload,updatedAt){
@@ -1099,14 +1099,16 @@ body:has(#typingHistoryView.active) .typing-history-page{max-width:none!importan
   function queueWriterSave(){updateWriterCount();$("writerSaveStatus").textContent="正在保存…";if(writerSaveTimer)clearTimeout(writerSaveTimer);writerSaveTimer=setTimeout(()=>{writerSaveTimer=null;saveCurrentChapter()},450)}
   function updateWriterCount(){const count=[...$("chapterBody").value].length;$("chapterWordCount").textContent=count.toLocaleString("zh-CN")+" 字";const btn=$("chapterList").querySelector('[data-chapter="'+CSS.escape(activeChapterId||"")+'"] .chapter-item-count');if(btn)btn.textContent=count.toLocaleString("zh-CN")+" 字"}
   // Writing statistics are stored alongside writing data so they follow the existing cloud-sync path.
-  function typingStats(){if(!writingData.typingStats||typeof writingData.typingStats!=="object")writingData.typingStats={days:{}};if(!writingData.typingStats.days||typeof writingData.typingStats.days!=="object")writingData.typingStats.days={};return writingData.typingStats}
+  function typingStats(){if(!writingData.typingStats||typeof writingData.typingStats!=="object")writingData.typingStats={days:{},hours:{}};if(!writingData.typingStats.days||typeof writingData.typingStats.days!=="object")writingData.typingStats.days={};if(!writingData.typingStats.hours||typeof writingData.typingStats.hours!=="object")writingData.typingStats.hours={};return writingData.typingStats}
   function dayKey(date=new Date()){return date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0")}
+  function hourKey(date=new Date()){return dayKey(date)+"-"+String(date.getHours()).padStart(2,"0")}
   function dayStats(key=dayKey()){const days=typingStats().days;if(!days[key])days[key]={chars:0,typingSeconds:0,focusSeconds:0};return days[key]}
+  function hourStats(key=hourKey()){const hours=typingStats().hours;if(!hours[key])hours[key]={chars:0,typingSeconds:0};return hours[key]}
   function formatTypingTime(seconds){seconds=Math.max(0,Math.floor(seconds||0));if(seconds<60)return seconds+" 秒";const mins=Math.floor(seconds/60),hrs=Math.floor(mins/60);return hrs?hrs+" 小时 "+(mins%60)+" 分钟":mins+" 分钟"}
   let typingCalendarMonth=new Date(new Date().getFullYear(),new Date().getMonth(),1);
   function renderTypingHistory(){
-    const days=typingStats().days,today=days[dayKey()]||{chars:0,typingSeconds:0,focusSeconds:0},speed=today.typingSeconds?Math.round((today.chars||0)/(today.typingSeconds/60)):0;
-    $("typingTodayChars").textContent=(today.chars||0).toLocaleString("zh-CN")+" 字";$("typingTodayTime").textContent=formatTypingTime(today.typingSeconds);$("typingTodayFocus").textContent=formatTypingTime(today.focusSeconds);$("typingTodaySpeed").textContent=speed.toLocaleString("zh-CN")+" 字/分钟";
+    const days=typingStats().days,today=days[dayKey()]||{chars:0,typingSeconds:0,focusSeconds:0},hour=hourStats(),speed=hour.typingSeconds?Math.round((hour.chars||0)/(hour.typingSeconds/3600)):0;
+    $("typingTodayChars").textContent=(today.chars||0).toLocaleString("zh-CN")+" 字";$("typingTodayTime").textContent=formatTypingTime(today.typingSeconds);$("typingTodayFocus").textContent=formatTypingTime(today.focusSeconds);$("typingTodaySpeed").textContent=speed.toLocaleString("zh-CN")+" 字/小时";
     const now=new Date(),todayKey=dayKey(),monthStart=new Date(typingCalendarMonth.getFullYear(),typingCalendarMonth.getMonth(),1),nextMonth=new Date(typingCalendarMonth.getFullYear(),typingCalendarMonth.getMonth()+1,1),monthLabel=typingCalendarMonth.getFullYear()+" 年 "+(typingCalendarMonth.getMonth()+1)+" 月";
     const daysInMonth=new Date(typingCalendarMonth.getFullYear(),typingCalendarMonth.getMonth()+1,0).getDate(),firstWeekday=monthStart.getDay();
     const activity={};
@@ -1140,12 +1142,12 @@ body:has(#typingHistoryView.active) .typing-history-page{max-width:none!importan
   function updateLiveTypingNav(){
     const area=$("chapterBody"),now=Date.now();
     const chars=area?[...area.value].length:0;
-    const active=!!(typingLastInputAt&&now-typingLastInputAt<=10000&&typingSessionStartAt);
-    const speed=active?Math.round(typingSessionChars/Math.max(1,(now-typingSessionStartAt)/60000)):0;
+    const active=!!(typingLastInputAt&&now-typingLastInputAt<=60000&&typingSessionStartAt),hour=hourStats();
+    const speed=hour.typingSeconds?Math.round((hour.chars||0)/(hour.typingSeconds/3600)):0;
     const speedEl=$("typingLiveSpeed"),charsEl=$("typingLiveChapterChars"),hint=$("typingLiveSpeedHint");
-    if(speedEl)speedEl.textContent=speed.toLocaleString("zh-CN")+" 字/分钟";
+    if(speedEl)speedEl.textContent=speed.toLocaleString("zh-CN")+" 字/小时";
     if(charsEl)charsEl.textContent=chars.toLocaleString("zh-CN")+" 字";
-    if(hint)hint.textContent=active?"正在根据本次编辑会话估算":"进入作品并开始输入后实时计算";
+    if(hint)hint.textContent=active?"按本小时累计打字时间估算，继续输入会持续更新":"进入作品并开始输入后计算本小时预计速度";
   }
   function recordTypingInput(){
     const area=$("chapterBody"),now=Date.now(),value=area.value;
@@ -1153,12 +1155,12 @@ body:has(#typingHistoryView.active) .typing-history-page{max-width:none!importan
     let prefix=0;while(prefix<typingLastLength&&prefix<value.length&&typingPreviousValue[prefix]===value[prefix])prefix++;
     let suffix=0;while(suffix<typingLastLength-prefix&&suffix<value.length-prefix&&typingPreviousValue[typingPreviousValue.length-1-suffix]===value[value.length-1-suffix])suffix++;
     const inserted=Math.max(0,value.length-prefix-suffix);
-    if(inserted){dayStats().chars+=inserted;saveWritingData();if(!typingSessionStartAt)typingSessionStartAt=now;typingSessionChars+=inserted}
+    if(inserted){dayStats().chars+=inserted;hourStats(hourKey(new Date(now))).chars+=inserted;saveWritingData();if(!typingSessionStartAt)typingSessionStartAt=now;typingSessionChars+=inserted}
     typingPreviousValue=value;typingLastLength=value.length;typingLastInputAt=now;updateLiveTypingNav();
     if(activeView==="typingHistoryView")renderTypingHistory();
   }
   let typingPreviousValue="";
-  setInterval(()=>{if(!typingLastInputAt)return;const area=$("chapterBody"),now=Date.now();if(document.activeElement!==area||!currentChapter()||now-typingLastInputAt>60000)return;const d=dayStats();d.typingSeconds=(d.typingSeconds||0)+1;if(now-typingLastInputAt<=15000)d.focusSeconds=(d.focusSeconds||0)+1;typingSecondsSinceSave++;if(typingSecondsSinceSave>=10){typingSecondsSinceSave=0;saveWritingData()}updateLiveTypingNav();if(activeView==="typingHistoryView")renderTypingHistory()},1000);
+  setInterval(()=>{if(!typingLastInputAt)return;const area=$("chapterBody"),now=Date.now();if(document.activeElement!==area||!currentChapter()||now-typingLastInputAt>60000)return;const d=dayStats(),h=hourStats(hourKey(new Date(now)));d.typingSeconds=(d.typingSeconds||0)+1;h.typingSeconds=(h.typingSeconds||0)+1;if(now-typingLastInputAt<=15000)d.focusSeconds=(d.focusSeconds||0)+1;typingSecondsSinceSave++;if(typingSecondsSinceSave>=10){typingSecondsSinceSave=0;saveWritingData()}updateLiveTypingNav();if(activeView==="typingHistoryView")renderTypingHistory()},1000);
   setInterval(updateLiveTypingNav,1000);
   function createWork(){$("newWorkTitle").value="";$("workModal").classList.remove("hidden");$("newWorkTitle").focus()} function submitCreateWork(event){event.preventDefault();const title=$("newWorkTitle").value.trim();if(!title)return toast("作品名称不能为空。");const w={id:uid(),title,chapters:[],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};writingData.works.unshift(w);activeWorkId=w.id;activeChapterId=null;writerScreen="chapters";saveWritingData();$("workModal").classList.add("hidden");renderWriter()}
   function createChapter(){const w=currentWork();if(!w)return toast("请先创建或选择一部作品。");flushWriterSave();const n=w.chapters.length+1;const c={id:uid(),title:"第"+n+"章",body:"",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};w.chapters.push(c);activeChapterId=c.id;saveWritingData();renderWriter();$("chapterTitle").focus()}
