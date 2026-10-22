@@ -147,12 +147,12 @@ body.writing-active #chapterList{max-height:calc(100dvh - 250px)!important;overf
  body.writing-active .writer-side{max-height:none!important;min-height:0!important;height:auto!important;overflow:visible!important}
  body.writing-active #chapterList{max-height:180px!important;overflow-y:auto!important}
 }
-/* Give the chapter editor enough visible writing space for at least ~2,000 Chinese characters. */
-body.writing-active .chapter-body-wrap{flex:none!important;min-height:1900px!important}
-body.writing-active .chapter-body-wrap #chapterBody{flex:none!important;height:1900px!important;min-height:1900px!important}
+/* Set the visible editor height to roughly 1,000 Chinese characters; the textarea remains unrestricted. */
+body.writing-active .chapter-body-wrap{flex:none!important;min-height:950px!important}
+body.writing-active .chapter-body-wrap #chapterBody{flex:none!important;height:950px!important;min-height:950px!important}
 @media(max-width:760px){
- body.writing-active .chapter-body-wrap{min-height:2600px!important}
- body.writing-active .chapter-body-wrap #chapterBody{height:2600px!important;min-height:2600px!important}
+ body.writing-active .chapter-body-wrap{min-height:1300px!important}
+ body.writing-active .chapter-body-wrap #chapterBody{height:1300px!important;min-height:1300px!important}
 }
 /* In a specific work, keep the logo row and place chapter navigation/editor immediately below it. */
 body.writing-active #writerDetailHead{display:none!important}
