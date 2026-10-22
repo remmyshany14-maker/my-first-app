@@ -510,6 +510,8 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
     event.preventDefault();
     const id = button.dataset.view;
     if(id!==activeView&&activeView)viewHistory.push(activeView);activeView=id;
+    // Clicking Works always returns to the works library, even from inside a work/chapter.
+    if(id==="writingView"){writerScreen="library";document.body.classList.remove("focus-writing");}
     document.body.classList.toggle("writing-active", id === "writingView");
     document.querySelectorAll(".view").forEach(view => view.classList.toggle("active", view.id === id));
     document.querySelectorAll(".nav-btn").forEach(item => item.classList.toggle("active", item === button));
