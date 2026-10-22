@@ -1208,5 +1208,31 @@ body:has(#typingHistoryView.active) .typing-history-page{max-width:none!importan
   if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{}))}
 })();
 </script>
+<script>
+/* Independent emergency navigation handler: keep Back working even if the main writer handler fails. */
+(function(){
+  function returnToWorks(e){
+    var button=e.target&&e.target.closest?e.target.closest("#backToWorks"):null;
+    if(!button)return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    try { writerScreen="library"; } catch(_){}
+    document.body.classList.remove("focus-writing");
+    try { if(typeof flushWriterSave==="function") flushWriterSave(); } catch(err){ console.error("Writer save before back failed",err); }
+    try { if(typeof renderWriter==="function"){ renderWriter(); return; } } catch(err){ console.error("Writer render before back failed",err); }
+    var lib=document.getElementById("writerLibrary"), layout=document.getElementById("writerLayout"), head=document.getElementById("writerDetailHead");
+    if(lib){lib.hidden=false;lib.classList.remove("hidden");}
+    if(layout){layout.hidden=true;layout.classList.add("hidden");}
+    if(head){head.hidden=true;head.classList.add("hidden");}
+    button.hidden=true;
+  }
+  document.addEventListener("click",returnToWorks,true);
+  document.addEventListener("pointerup",function(e){
+    var b=e.target&&e.target.closest?e.target.closest("#backToWorks"):null;
+    if(b){ e.preventDefault(); returnToWorks(e); }
+  },true);
+})();
+</script>
 </body>
 </html>
