@@ -593,7 +593,6 @@ body:has(#typingHistoryView.active) .typing-history-page{margin-top:0!important}
 <p class="subtle">安全说明：网页只使用 Supabase Publishable key；数据库通过 RLS 隔离账号数据。不要把 service_role 或 secret key 放进网页。</p></div>
     <div class="settings-card"><h3>危险操作</h3><p>清空操作会删除本浏览器中保存的所有记录，且无法撤销。请先导出备份。</p><button class="danger" id="clearData">清空所有记录</button></div>
   </section>
-</div>
 
 <section id="typingHistoryView" class="view">
   <div class="typing-history-page">
@@ -610,6 +609,7 @@ body:has(#typingHistoryView.active) .typing-history-page{margin-top:0!important}
     <div class="typing-table-card"><div class="typing-section-title"><h3>本月每日记录</h3><span id="typingMonthTableSummary">按日期倒序</span></div><div class="typing-table-wrap"><table class="typing-table"><thead><tr><th>日期</th><th>新增字数</th><th>打字时间</th><th>专注时间</th><th>速度</th><th>修改章节</th><th>章节当前字数</th></tr></thead><tbody id="typingHistoryRows"></tbody></table></div><p id="typingHistoryEmpty" class="typing-history-empty" hidden>尚无已保存的打字统计。下方章节修改记录可帮助你查看本月哪些章节有修改，但无法还原未采集的历史打字时间或真实新增字数。</p></div>
   </div>
 </section>
+</div>
 
 <nav class="bottom-nav" aria-label="主导航">
   <button type="button" class="nav-btn active" data-view="homeView"><span class="nav-icon">⌂</span><span>首页</span></button>
