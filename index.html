@@ -600,8 +600,8 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
       <article class="typing-stat-card"><span>今日专注时间</span><strong id="typingTodayFocus">0 分钟</strong><small>连续输入间隔不超过 15 秒</small></article>
       <article class="typing-stat-card"><span>平均打字速度</span><strong id="typingTodaySpeed">0 字/分钟</strong><small>新增字符 ÷ 打字时间</small></article>
     </div>
-    <div class="typing-chart-card"><div class="typing-section-title"><h3>近 14 天写作趋势</h3><span>每日新增字数</span></div><div id="typingChart" class="typing-chart" aria-label="近14天每日新增字数图表"></div></div>
-    <div class="typing-table-card"><div class="typing-section-title"><h3>每日记录</h3><span>按日期倒序</span></div><div class="typing-table-wrap"><table class="typing-table"><thead><tr><th>日期</th><th>新增字数</th><th>打字时间</th><th>专注时间</th><th>速度</th></tr></thead><tbody id="typingHistoryRows"></tbody></table></div><p id="typingHistoryEmpty" class="typing-history-empty" hidden>灰色日期表示当天还没有打字记录；开始写作后会自动累计。</p></div>
+    <div class="typing-chart-card"><div class="typing-section-title"><h3>本月写作趋势</h3><span id="typingMonthSummary">本月每日新增字数</span></div><div id="typingChart" class="typing-chart" aria-label="本月每日新增字数图表"></div></div>
+    <div class="typing-table-card"><div class="typing-section-title"><h3>本月每日记录</h3><span id="typingMonthTableSummary">按日期倒序</span></div><div class="typing-table-wrap"><table class="typing-table"><thead><tr><th>日期</th><th>新增字数</th><th>打字时间</th><th>专注时间</th><th>速度</th></tr></thead><tbody id="typingHistoryRows"></tbody></table></div><p id="typingHistoryEmpty" class="typing-history-empty" hidden>本月暂未发现已保存的打字统计。统计功能只能显示启用后实际记录的数据，不能自动补回此前未采集的打字时间。</p></div>
   </div>
 </section>
 
@@ -1099,12 +1099,16 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
   function renderTypingHistory(){
     const days=typingStats().days,today=days[dayKey()]||{chars:0,typingSeconds:0,focusSeconds:0},speed=today.typingSeconds?Math.round((today.chars||0)/(today.typingSeconds/60)):0;
     $("typingTodayChars").textContent=(today.chars||0).toLocaleString("zh-CN")+" 字";$("typingTodayTime").textContent=formatTypingTime(today.typingSeconds);$("typingTodayFocus").textContent=formatTypingTime(today.focusSeconds);$("typingTodaySpeed").textContent=speed.toLocaleString("zh-CN")+" 字/分钟";
-    const keys=[];for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);keys.push(dayKey(d))}
+    const now=new Date(),monthStart=new Date(now.getFullYear(),now.getMonth(),1),monthLabel=now.getFullYear()+" 年 "+(now.getMonth()+1)+" 月";
+    const keys=[];for(let d=new Date(monthStart);d<=now;d.setDate(d.getDate()+1))keys.push(dayKey(d));
+    const recordedDays=keys.filter(k=>{const d=days[k];return d&&((d.chars||0)>0||(d.typingSeconds||0)>0||(d.focusSeconds||0)>0)}).length;
+    $("typingMonthSummary").textContent=monthLabel+" · 已记录 "+recordedDays+" 天";
+    $("typingMonthTableSummary").textContent=monthLabel+" · "+keys.length+" 天";
     const max=Math.max(1,...keys.map(k=>days[k]?.chars||0));
     $("typingChart").innerHTML=keys.map(k=>{const n=days[k]?.chars||0,ratio=n?Math.max(3,Math.round(n/max*100)):3;return '<div class="typing-chart-day" title="'+k+'：'+n.toLocaleString("zh-CN")+' 字"><span class="typing-chart-value">'+(n? n.toLocaleString("zh-CN"):"0")+'</span><div class="typing-chart-track"><div class="typing-chart-bar'+(n?"":" is-zero")+'" style="height:'+ratio+'%"></div></div><span class="typing-chart-date">'+k.slice(5).replace("-","/")+'</span></div>'}).join("");
     const rows=keys.slice().reverse();
     $("typingHistoryRows").innerHTML=rows.map(k=>{const d=days[k]||{chars:0,typingSeconds:0,focusSeconds:0},sp=d.typingSeconds?Math.round((d.chars||0)/(d.typingSeconds/60)):0;return '<tr><td>'+k+'</td><td>'+((d.chars||0).toLocaleString("zh-CN"))+' 字</td><td>'+formatTypingTime(d.typingSeconds)+'</td><td>'+formatTypingTime(d.focusSeconds)+'</td><td>'+sp.toLocaleString("zh-CN")+' 字/分</td></tr>'}).join("");
-    $("typingHistoryEmpty").hidden=rows.length>0;
+    $("typingHistoryEmpty").hidden=recordedDays>0;
   }
   let typingLastInputAt=0,typingLastLength=0;
   function recordTypingInput(){
