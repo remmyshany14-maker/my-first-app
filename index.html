@@ -1105,13 +1105,15 @@ body:has(#typingHistoryView.active) .typing-history-page{max-width:none!importan
   // Writing statistics are stored alongside writing data so they follow the existing cloud-sync path.
   function mergeTypingStats(target,source){
      if(!source||typeof source!=="object")return target;
-     if(!target.days||typeof target.days!=="object")target.days={};if(!target.hours||typeof target.hours!=="object")target.hours={};
+     if(!target.days||typeof target.days!=="object")target.days={};if(!target.hours||typeof target.hours!=="object")target.hours={};if(!target.minutes||typeof target.minutes!=="object")target.minutes={};
      for(const [key,value] of Object.entries(source.days||{})){const prev=target.days[key]||{};target.days[key]={chars:Math.max(prev.chars||0,value?.chars||0),typingSeconds:Math.max(prev.typingSeconds||0,value?.typingSeconds||0),focusSeconds:Math.max(prev.focusSeconds||0,value?.focusSeconds||0)}}
      for(const [key,value] of Object.entries(source.hours||{})){const prev=target.hours[key]||{};target.hours[key]={chars:Math.max(prev.chars||0,value?.chars||0),typingSeconds:Math.max(prev.typingSeconds||0,value?.typingSeconds||0)}}
+     for(const [key,value] of Object.entries(source.minutes||{})){const prev=target.minutes[key]||{};target.minutes[key]={chars:Math.max(prev.chars||0,value?.chars||0),typingSeconds:Math.max(prev.typingSeconds||0,value?.typingSeconds||0)}}
+     const cutoff=Date.now()-3*60*60*1000;for(const key of Object.keys(target.minutes))if(Number(key)<cutoff)delete target.minutes[key];
      return target;
    }
    function saveTypingStats(){try{localStorage.setItem(TYPING_STATS_KEY,JSON.stringify(writingData.typingStats||{days:{},hours:{}}));return true}catch(e){return false}}
-   function typingStats(){if(!writingData.typingStats||typeof writingData.typingStats!=="object")writingData.typingStats={days:{},hours:{}};if(!writingData.typingStats.days||typeof writingData.typingStats.days!=="object")writingData.typingStats.days={};if(!writingData.typingStats.hours||typeof writingData.typingStats.hours!=="object")writingData.typingStats.hours={};try{const raw=localStorage.getItem(TYPING_STATS_KEY);if(raw)mergeTypingStats(writingData.typingStats,JSON.parse(raw))}catch(e){}return writingData.typingStats}
+   function typingStats(){if(!writingData.typingStats||typeof writingData.typingStats!=="object")writingData.typingStats={days:{},hours:{},minutes:{}};if(!writingData.typingStats.days||typeof writingData.typingStats.days!=="object")writingData.typingStats.days={};if(!writingData.typingStats.hours||typeof writingData.typingStats.hours!=="object")writingData.typingStats.hours={};if(!writingData.typingStats.minutes||typeof writingData.typingStats.minutes!=="object")writingData.typingStats.minutes={};try{const raw=localStorage.getItem(TYPING_STATS_KEY);if(raw)mergeTypingStats(writingData.typingStats,JSON.parse(raw))}catch(e){}return writingData.typingStats}
   function dayKey(date=new Date()){return date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0")}
   function hourKey(date=new Date()){return dayKey(date)+"-"+String(date.getHours()).padStart(2,"0")}
   function dayStats(key=dayKey()){const days=typingStats().days;if(!days[key])days[key]={chars:0,typingSeconds:0,focusSeconds:0};return days[key]}
@@ -1119,7 +1121,9 @@ body:has(#typingHistoryView.active) .typing-history-page{max-width:none!importan
   function formatTypingTime(seconds){seconds=Math.max(0,Math.floor(seconds||0));if(seconds<60)return seconds+" 秒";const mins=Math.floor(seconds/60),hrs=Math.floor(mins/60);return hrs?hrs+" 小时 "+(mins%60)+" 分钟":mins+" 分钟"}
   let typingCalendarMonth=new Date(new Date().getFullYear(),new Date().getMonth(),1);
   function renderTypingHistory(){
-    const days=typingStats().days,today=days[dayKey()]||{chars:0,typingSeconds:0,focusSeconds:0},hour=hourStats(),speed=hour.typingSeconds?Math.round((hour.chars||0)/(hour.typingSeconds/3600)):0;
+    const stats=typingStats(),days=stats.days,today=days[dayKey()]||{chars:0,typingSeconds:0,focusSeconds:0},nowMs=Date.now(),cutoffMs=nowMs-60*60*1000;
+    let rollingChars=0,rollingSeconds=0;for(const [key,value] of Object.entries(stats.minutes||{})){const stamp=Number(key);if(stamp>=cutoffMs&&stamp<=nowMs){rollingChars+=value.chars||0;rollingSeconds+=value.typingSeconds||0}}
+    const speed=rollingSeconds?Math.round(rollingChars/(rollingSeconds/3600)):0;
     const speedCard=$("typingLiveSpeed");if(speedCard)speedCard.textContent=speed.toLocaleString("zh-CN")+" 字/小时";
     $("typingTodayChars").textContent=(today.chars||0).toLocaleString("zh-CN")+" 字";$("typingTodayFocus").textContent=formatTypingTime(today.focusSeconds);
     const now=new Date(),todayKey=dayKey(),monthStart=new Date(typingCalendarMonth.getFullYear(),typingCalendarMonth.getMonth(),1),nextMonth=new Date(typingCalendarMonth.getFullYear(),typingCalendarMonth.getMonth()+1,1),monthLabel=typingCalendarMonth.getFullYear()+" 年 "+(typingCalendarMonth.getMonth()+1)+" 月";
@@ -1172,9 +1176,12 @@ body:has(#typingHistoryView.active) .typing-history-page{max-width:none!importan
     if(inserted){
       dayStats().chars+=inserted;
       hourStats(hourKey(new Date(now))).chars+=inserted;
-      saveTypingStats();
-      if(!typingSessionStartAt)typingSessionStartAt=now;
+      const minuteKey=Math.floor(now/60000)*60000,minuteStats=typingStats().minutes;
+      if(!minuteStats[minuteKey])minuteStats[minuteKey]={chars:0,typingSeconds:0};
+      minuteStats[minuteKey].chars+=inserted;
+      if(!typingSessionStartAt||now-typingLastInputAt>15000)typingSessionStartAt=now;
       typingSessionChars+=inserted;
+      saveTypingStats();
       saveWritingData();
     }
     typingPreviousValue=value;typingLastLength=value.length;typingLastInputAt=now;
@@ -1183,7 +1190,7 @@ body:has(#typingHistoryView.active) .typing-history-page{max-width:none!importan
     renderTypingHistory();
   }
   let typingPreviousValue="";
-  setInterval(()=>{if(!typingLastInputAt)return;const area=$("chapterBody"),now=Date.now();if(document.activeElement!==area||!currentChapter()||now-typingLastInputAt>15000)return;const d=dayStats(),h=hourStats(hourKey(new Date(now)));d.typingSeconds=(d.typingSeconds||0)+1;h.typingSeconds=(h.typingSeconds||0)+1;d.focusSeconds=(d.focusSeconds||0)+1;typingSecondsSinceSave++;if(typingSecondsSinceSave>=10){typingSecondsSinceSave=0;saveTypingStats();saveWritingData()}updateLiveTypingNav();renderTypingHistory()},1000);
+  setInterval(()=>{const area=$("chapterBody"),now=Date.now();if(!typingLastInputAt||document.activeElement!==area||!currentChapter()||now-typingLastInputAt>15000)return;const d=dayStats(),h=hourStats(hourKey(new Date(now))),minuteKey=Math.floor(now/60000)*60000,minutes=typingStats().minutes;if(!minutes[minuteKey])minutes[minuteKey]={chars:0,typingSeconds:0};d.typingSeconds=(d.typingSeconds||0)+1;h.typingSeconds=(h.typingSeconds||0)+1;d.focusSeconds=(d.focusSeconds||0)+1;minutes[minuteKey].typingSeconds=(minutes[minuteKey].typingSeconds||0)+1;typingSecondsSinceSave++;if(typingSecondsSinceSave>=5){typingSecondsSinceSave=0;saveTypingStats();saveWritingData()}updateLiveTypingNav();renderTypingHistory()},1000);
   setInterval(updateLiveTypingNav,1000);
   function createWork(){$("newWorkTitle").value="";$("workModal").classList.remove("hidden");$("newWorkTitle").focus()} function submitCreateWork(event){event.preventDefault();const title=$("newWorkTitle").value.trim();if(!title)return toast("作品名称不能为空。");const w={id:uid(),title,chapters:[],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};writingData.works.unshift(w);activeWorkId=w.id;activeChapterId=null;writerScreen="chapters";saveWritingData();$("workModal").classList.add("hidden");renderWriter()}
   function createChapter(){const w=currentWork();if(!w)return toast("请先创建或选择一部作品。");flushWriterSave();const n=w.chapters.length+1;const c={id:uid(),title:"第"+n+"章",body:"",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};w.chapters.push(c);activeChapterId=c.id;saveWritingData();renderWriter();$("chapterTitle").focus()}
