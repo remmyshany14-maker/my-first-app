@@ -991,6 +991,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
       btn.addEventListener("pointerdown",e=>{
         if(e.button!==undefined&&e.button!==0)return;
         clearPress();dragging=null;dropTarget=null;moved=false;startX=e.clientX;startY=e.clientY;
+        try{btn.setPointerCapture(e.pointerId)}catch(_){}
         pressTimer=setTimeout(()=>{pressTimer=null;dragging=btn;btn.classList.add("dragging-chapter");},260);
       });
       btn.addEventListener("pointermove",e=>{
