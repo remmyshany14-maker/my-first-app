@@ -946,7 +946,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
   function downloadFile(name,content,type){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
   function exportData(){flushWriterSave();const backup={app:"灵感日记",version:2,exportedAt:new Date().toISOString(),entries:data.entries,categories:data.categories,customTypes:data.customTypes||[],writingData};downloadFile("灵感日记完整备份-"+today()+".json",JSON.stringify(backup,null,2),"application/json");toast("完整备份已生成")}
   async function importData(file){try{const parsed=JSON.parse(await file.text());const entries=parsed.entries,categories=parsed.categories;const allowedTypes=["idea","diary",...(Array.isArray(parsed.customTypes)?parsed.customTypes:[])];if(!Array.isArray(entries)||!categories||!Array.isArray(categories.idea)||!Array.isArray(categories.diary)||entries.some(e=>!e||!e.id||!allowedTypes.includes(e.type)))throw new Error("format");const importedWriting=parsed.writingData;if(importedWriting!==undefined&&(!importedWriting||!Array.isArray(importedWriting.works)||importedWriting.works.some(w=>!w||!w.id||!Array.isArray(w.chapters))))throw new Error("writing format");if(!confirm("导入将替换本设备的灵感、日记、分类和正式作品。建议先导出当前完整备份。确定继续吗？"))return;const importedTypes=unique(Array.isArray(parsed.customTypes)?parsed.customTypes:[]).filter(t=>!["idea","diary"].includes(t));const importedCategories={idea:unique(categories.idea),diary:unique(categories.diary)};importedTypes.forEach(t=>importedCategories[t]=unique([...(Array.isArray(categories[t])?categories[t]:[]),"待整理"]));data={version:1,entries:entries.map(e=>({...e})),categories:importedCategories,customTypes:importedTypes};const previousWriting=writingData;if(importedWriting)writingData={works:importedWriting.works.map(w=>({...w,chapters:w.chapters.map(c=>({...c}))}))};if(persist()&&(importedWriting?saveWritingData():true)){renderHome();renderWriter();toast("完整备份导入成功")}else writingData=previousWriting}catch(e){toast("导入失败：文件格式不正确或无法读取。")}finally{$("importFile").value=""}}
-  $("addWorkElementForm").addEventListener("submit",submitAddWorkElementTab);$("cancelAddWorkElement").addEventListener("click",()=>$("addWorkElementForm").classList.add("hidden"));function finishWorkTitleEdit(){const input=$("writerDetailName"),w=currentWork();if(!w)return;const title=input.value.trim();input.readOnly=true;if(!title){input.value=w.title;return}if(title===w.title)return;w.title=title;w.updatedAt=new Date().toISOString();saveWritingData();$("chapterGroupHeading").textContent=title;input.value=title;document.querySelectorAll("#workElementWindows .work-element-float").forEach(p=>{if(p.dataset.workId===w.id){const strong=p.querySelector(".work-element-float-head strong");if(strong)strong.textContent=(getWorkElementDefs(w).find(d=>d.id===p.dataset.elementId)?.title||"设定")+" · "+title}});toast("作品名称已修改")} $("writerDetailName").addEventListener("dblclick",()=>{$("writerDetailName").readOnly=false;$("writerDetailName").focus();$("writerDetailName").select()});$("writerDetailName").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("writerDetailName").blur()}if(e.key==="Escape"){$("writerDetailName").value=currentWork()?.title||"";$("writerDetailName").readOnly=true;$("writerDetailName").blur()}});$("writerDetailName").addEventListener("blur",finishWorkTitleEdit);$("workElementsToolbar").addEventListener("click",e=>{const del=e.target.closest("[data-delete-work-element]");if(del){deleteWorkElementTab(del.dataset.deleteWorkElement);return}const btn=e.target.closest("[data-work-element]");if(btn){openWorkElement(btn.dataset.workElement);return}if(e.target.closest("#addWorkElement"))addWorkElementTab()});
+  $("addWorkElementForm").addEventListener("submit",submitAddWorkElementTab);$("cancelAddWorkElement").addEventListener("click",()=>$("addWorkElementForm").classList.add("hidden"));function finishWorkTitleEdit(){const input=$("writerDetailName"),w=currentWork();if(!w)return;const title=input.value.trim();input.readOnly=true;if(!title){input.value=w.title;return}if(title===w.title)return;w.title=title;w.updatedAt=new Date().toISOString();saveWritingData();$("chapterGroupHeading").textContent=title;input.value=title;document.querySelectorAll("#workElementWindows .work-element-float").forEach(p=>{if(p.dataset.workId===w.id){const strong=p.querySelector(".work-element-float-head strong");if(strong)strong.textContent=(getWorkElementDefs(w).find(d=>d.id===p.dataset.elementId)?.title||"设定")+" · "+title}});toast("作品名称已修改")} $("writerDetailName").addEventListener("click",()=>{if($("writerDetailName").readOnly){$("writerDetailName").readOnly=false;$("writerDetailName").focus();$("writerDetailName").select()}});$("writerDetailName").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("writerDetailName").blur()}if(e.key==="Escape"){$("writerDetailName").value=currentWork()?.title||"";$("writerDetailName").readOnly=true;$("writerDetailName").blur()}});$("writerDetailName").addEventListener("blur",finishWorkTitleEdit);$("workElementsToolbar").addEventListener("click",e=>{const del=e.target.closest("[data-delete-work-element]");if(del){deleteWorkElementTab(del.dataset.deleteWorkElement);return}const btn=e.target.closest("[data-work-element]");if(btn){openWorkElement(btn.dataset.workElement);return}if(e.target.closest("#addWorkElement"))addWorkElementTab()});
   $("newIdea").addEventListener("click",()=>openEditor("idea"));$("newDiary").addEventListener("click",()=>openEditor("diary"));$("listNew").addEventListener("click",()=>openEditor(filterType==="diary"?"diary":"idea"));$("editorBack").addEventListener("click",leaveEditor);$("saveEntry").addEventListener("click",leaveEditor);$("editorForm").addEventListener("submit",saveEditor);$("entryTitle").addEventListener("input",queueEditorSave);$("entryBody").addEventListener("input",queueEditorSave);$("searchInput").addEventListener("input",e=>{searchTerm=e.target.value;renderList()});
   document.addEventListener("click",e=>{const btn=e.target.closest("#typeFilters [data-type]");if(!btn)return;filterType=btn.dataset.type;filterCategory="all";renderList()});
   $("deleteEntry").addEventListener("click",()=>deleteEntryById(currentId));$("entryTypeSelect").addEventListener("change",e=>{editorType=e.target.value;refreshEntryCategories("");queueEditorSave()});$("entryCategory").addEventListener("change",queueEditorSave);$("addEditorCategory").addEventListener("click",addEditorCategory);
@@ -983,41 +983,44 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
   function addWorkVolume(){const w=currentWork();if(!w)return;const title=prompt("请输入卷名，例如：第一卷 初入京城");if(title===null)return;const clean=title.trim();if(!clean)return toast("卷名不能为空");if(!Array.isArray(w.volumes))w.volumes=[];if(w.volumes.some(v=>v.title.toLocaleLowerCase()===clean.toLocaleLowerCase()))return toast("已有同名卷");const volume={id:"vol_"+uid(),title:clean};w.volumes.push(volume);const c=currentChapter();if(c)c.volumeId=volume.id;saveWritingData();renderWriter();toast("已创建「"+clean+"」")}
   function changeChapterVolume(){flushWriterSave();const w=currentWork(),c=currentChapter();if(!w||!c)return;c.volumeId=$("chapterVolumeSelect").value||"";w.updatedAt=new Date().toISOString();saveWritingData();renderWriter()}
   function bindChapterReordering(work){
-    const list=$("chapterList");let pressTimer=null,dragging=null,startX=0,startY=0,moved=false;
+    const list=$("chapterList");let pressTimer=null,dragging=null,startX=0,startY=0,dropTarget=null,dropBefore=true,moved=false;
     const clearPress=()=>{if(pressTimer){clearTimeout(pressTimer);pressTimer=null}};
+    const clearMarkers=()=>list.querySelectorAll(".drop-before,.drop-after").forEach(el=>el.classList.remove("drop-before","drop-after"));
     list.querySelectorAll("[data-chapter]").forEach(btn=>{
       btn.classList.add("drag-ready");
       btn.addEventListener("pointerdown",e=>{
         if(e.button!==undefined&&e.button!==0)return;
-        clearPress();dragging=null;moved=false;startX=e.clientX;startY=e.clientY;
-        try{btn.setPointerCapture(e.pointerId)}catch(_){}
-        pressTimer=setTimeout(()=>{pressTimer=null;dragging=btn;btn.classList.add("dragging-chapter");},380);
+        clearPress();dragging=null;dropTarget=null;moved=false;startX=e.clientX;startY=e.clientY;
+        pressTimer=setTimeout(()=>{pressTimer=null;dragging=btn;btn.classList.add("dragging-chapter");},260);
       });
       btn.addEventListener("pointermove",e=>{
         if(!dragging&&Math.hypot(e.clientX-startX,e.clientY-startY)>9)clearPress();
         if(!dragging)return;
         const target=document.elementFromPoint(e.clientX,e.clientY)?.closest("#chapterList [data-chapter]");
-        list.querySelectorAll(".drop-before,.drop-after").forEach(el=>el.classList.remove("drop-before","drop-after"));
+        clearMarkers();dropTarget=null;
         if(!target||target===dragging)return;
-        const rect=target.getBoundingClientRect(),before=e.clientY<rect.top+rect.height/2;
-        target.classList.add(before?"drop-before":"drop-after");
-        list.insertBefore(dragging,before?target:target.nextSibling);moved=true;
+        // Reorder within the same volume group; chapters remain assigned to their chosen volume.
+        if((target.closest("[data-volume-group]")?.dataset.volumeGroup||"")!==(dragging.closest("[data-volume-group]")?.dataset.volumeGroup||""))return;
+        const rect=target.getBoundingClientRect();dropBefore=e.clientY<rect.top+rect.height/2;dropTarget=target;
+        target.classList.add(dropBefore?"drop-before":"drop-after");
       });
-      const finish=e=>{
+      const finish=()=>{
         clearPress();
         if(!dragging)return;
-        const didMove=moved;dragging.classList.remove("dragging-chapter");
-        list.querySelectorAll(".drop-before,.drop-after").forEach(el=>el.classList.remove("drop-before","drop-after"));
-        if(didMove){
-          const order=[...list.querySelectorAll("[data-chapter]")].map(el=>el.dataset.chapter);
-          const byId=new Map(work.chapters.map(ch=>[ch.id,ch]));
-          work.chapters=order.map(id=>byId.get(id)).filter(Boolean);
-          saveWritingData();skipNextChapterClick=true;setTimeout(()=>{skipNextChapterClick=false},0);renderWriter();
+        const draggedId=dragging.dataset.chapter,targetId=dropTarget?.dataset.chapter;
+        dragging.classList.remove("dragging-chapter");clearMarkers();
+        if(targetId&&targetId!==draggedId){
+          const from=work.chapters.findIndex(ch=>ch.id===draggedId),to=work.chapters.findIndex(ch=>ch.id===targetId);
+          if(from>=0&&to>=0&&work.chapters[from].volumeId===work.chapters[to].volumeId){
+            const [item]=work.chapters.splice(from,1);let targetIndex=work.chapters.findIndex(ch=>ch.id===targetId);
+            if(!dropBefore)targetIndex++;
+            work.chapters.splice(targetIndex,0,item);saveWritingData();skipNextChapterClick=true;setTimeout(()=>{skipNextChapterClick=false},0);renderWriter();
+          }
         }
-        dragging=null;moved=false;
+        dragging=null;dropTarget=null;moved=false;
       };
       btn.addEventListener("pointerup",finish);
-      btn.addEventListener("pointercancel",()=>{clearPress();if(dragging)dragging.classList.remove("dragging-chapter");dragging=null;moved=false});
+      btn.addEventListener("pointercancel",()=>{clearPress();if(dragging)dragging.classList.remove("dragging-chapter");clearMarkers();dragging=null;dropTarget=null;moved=false});
       btn.addEventListener("contextmenu",e=>{if(dragging)e.preventDefault()});
     });
   }
