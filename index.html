@@ -630,13 +630,13 @@ body:has(#typingHistoryView.active) .typing-history-page{max-width:none!importan
     .home-actions{position:static;margin:14px 0 26px;padding:0;background:transparent;backdrop-filter:none}
     body.writing-active .app{padding:8px 8px calc(86px + env(safe-area-inset-bottom))!important}
     body.writing-active .writer-layout{display:grid;grid-template-columns:1fr;gap:8px;min-height:0}
-    body.writing-active .writer-side{grid-column:1;grid-row:1;min-height:0;height:auto;max-height:none;border-radius:13px;padding:10px;overflow:hidden}
-    body.writing-active .writer-main{grid-column:1;grid-row:2;width:100%;min-width:0;min-height:calc(100dvh - 185px);padding:12px 8px 24px;border-radius:13px}
+    body.writing-active .writer-side{grid-column:1;grid-row:1;min-height:0!important;height:48px!important;max-height:48px!important;border-radius:13px;padding:7px 10px;overflow:hidden!important}
+    body.writing-active .writer-side:not(.is-expanded) #createChapterSide,body.writing-active .writer-side:not(.is-expanded) #chapterList{display:none}
+    body.writing-active .writer-side.is-expanded{height:auto!important;max-height:220px!important;overflow:auto!important}
+    body.writing-active .writer-main{grid-column:1;grid-row:2;width:100%;min-width:0;min-height:calc(100dvh - 130px);padding:12px 8px 24px;border-radius:13px;overflow:visible}
     body.writing-active #chapterList{max-height:180px;overflow-y:auto;grid-template-columns:1fr}
     body.writing-active .chapter-nav-toggle{display:inline-flex;align-items:center;justify-content:center}
-    body.writing-active .writer-side.is-collapsed{max-height:50px;padding-bottom:7px}
-    body.writing-active .writer-side.is-collapsed #createChapterSide,body.writing-active .writer-side.is-collapsed #chapterList{display:none}
-    body.writing-active .writer-side.is-collapsed .chapter-nav-toggle{transform:rotate(180deg)}
+    body.writing-active .writer-side.is-expanded .chapter-nav-toggle{transform:rotate(180deg)}
     body.writing-active #chapterEditor{width:100%;max-width:none}
     body.writing-active #chapterBody{width:100%;min-height:calc(100dvh - 300px);padding:16px 13px;font-size:16px;line-height:1.9}
     body.writing-active .chapter-body-wrap{width:100%;min-height:0}
@@ -689,7 +689,7 @@ body:has(#typingHistoryView.active) .typing-history-page{max-width:none!importan
     <section class="writer-speed-panel hidden" id="writerSpeedPanel" aria-live="polite"><div class="writer-speed-panel-head"><strong>本次码字统计</strong><button type="button" class="writer-speed-close" id="closeWriterSpeed">×</button></div><div class="writer-speed-grid"><div><span>本次码字</span><strong id="writerSpeedChars">0 字</strong></div><div><span>码子时速</span><strong id="writerSpeedRate">0 字/小时</strong></div><div><span>码字时间</span><strong id="writerSpeedWritingTime">0 秒</strong></div><div><span>空闲时间</span><strong id="writerSpeedIdleTime">0 秒</strong></div></div></section>
     <div class="writer-layout hidden" id="writerLayout">
       <aside class="writer-side">
-        <div class="section-head chapter-nav-heading" style="margin-top:0"><div><h3 id="chapterGroupHeading">章节导航</h3><p class="subtle" id="chapterNavCurrent" style="margin:4px 0 0">当前作品</p></div><div class="chapter-nav-actions"><button type="button" class="secondary small-btn chapter-nav-toggle" id="chapterNavToggle" aria-expanded="true" aria-controls="chapterList" title="展开或收起章节导航">‹</button><button type="button" class="secondary small-btn chapter-nav-add-volume" id="addVolumeNav" title="新建卷">＋ 新建卷</button></div></div>
+        <div class="section-head chapter-nav-heading" style="margin-top:0"><div><h3 id="chapterGroupHeading">章节导航</h3><p class="subtle" id="chapterNavCurrent" style="margin:4px 0 0">当前作品</p></div><div class="chapter-nav-actions"><button type="button" class="secondary small-btn chapter-nav-toggle" id="chapterNavToggle" aria-expanded="false" aria-controls="chapterList" title="展开或收起章节导航">›</button><button type="button" class="secondary small-btn chapter-nav-add-volume" id="addVolumeNav" title="新建卷">＋ 新建卷</button></div></div>
         <button type="button" class="primary small-btn" id="createChapterSide" style="width:100%;margin:0 0 10px">＋ 新建章节</button>
         
         <div id="chapterList" class="chapter-list"><div class="writer-empty">先创建或选择一部作品。</div></div>
@@ -1167,7 +1167,7 @@ body:has(#typingHistoryView.active) .typing-history-page{max-width:none!importan
   let writerScreen="library";
   function currentWork(){return writingData.works.find(w=>w.id===activeWorkId)||null}
   function currentChapter(){const w=currentWork();return w?.chapters.find(c=>c.id===activeChapterId)||null}
-  function enterWork(id){flushWriterSave();activeWorkId=id;const w=currentWork();activeChapterId=w?.chapters[0]?.id||null;writerScreen="chapters";document.body.classList.remove("focus-writing");renderWriter()}
+  function enterWork(id){flushWriterSave();activeWorkId=id;const w=currentWork();activeChapterId=w?.chapters[0]?.id||null;writerScreen="chapters";document.body.classList.remove("focus-writing");const side=document.querySelector(".writer-side"),toggle=$("chapterNavToggle");side?.classList.remove("is-expanded");if(toggle){toggle.setAttribute("aria-expanded","false");toggle.textContent="›"}renderWriter()}
   function renderWriter(){
     const library=$("writerLibrary"),layout=$("writerLayout"),detail=$("writerDetailHead"),grid=$("workGrid"),inLibrary=writerScreen==="library";
     $("writerSpeedDetails").hidden=inLibrary||!currentChapter();if(inLibrary||!currentChapter())$("writerSpeedPanel").classList.add("hidden");
@@ -1437,7 +1437,7 @@ body:has(#typingHistoryView.active) .typing-history-page{max-width:none!importan
   renderHome();
   renderWriter();
   if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=74").then(reg=>reg.update()).catch(()=>{}))}
-  $("chapterNavToggle")?.addEventListener("click",()=>{const side=document.querySelector(".writer-side"),button=$("chapterNavToggle");if(!side||!button)return;const collapsed=side.classList.toggle("is-collapsed");button.setAttribute("aria-expanded",String(!collapsed));button.textContent=collapsed?"›":"‹"});
+  $("chapterNavToggle")?.addEventListener("click",()=>{const side=document.querySelector(".writer-side"),button=$("chapterNavToggle");if(!side||!button)return;const expanded=side.classList.toggle("is-expanded");button.setAttribute("aria-expanded",String(expanded));button.textContent=expanded?"‹":"›"});
 })();
 </script>
 <script>
