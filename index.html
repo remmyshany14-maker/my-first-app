@@ -1109,6 +1109,9 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
       const k=dayKey(dt);if(!activity[k])activity[k]={chapters:0,chars:0,titles:[]};
       activity[k].chapters++;activity[k].chars+=[...(c.body||"")].length;activity[k].titles.push((w.title||"作品")+" · "+(c.title||"未命名章节"));totalModified++;
     }
+    const todayActivity=activity[dayKey()],todayHasStats=!!(days[dayKey()]&&((days[dayKey()].chars||0)>0||(days[dayKey()].typingSeconds||0)>0||(days[dayKey()].focusSeconds||0)>0));
+    if(!todayHasStats&&todayActivity){$("typingTodayChars").textContent="未采集";$("typingTodayTime").textContent="未采集";$("typingTodayFocus").textContent="未采集";$("typingTodaySpeed").textContent="未采集";$("typingTodayChars").title="今日修改章节当前字数参考："+todayActivity.chars.toLocaleString("zh-CN")+" 字；不是当日新增字数。"}
+    else {$("typingTodayChars").title="按统计功能启用后实际新增的字符计数。"}
     const recordedDays=keys.filter(k=>{const d=days[k];return d&&((d.chars||0)>0||(d.typingSeconds||0)>0||(d.focusSeconds||0)>0)}).length;
     const activityDays=keys.filter(k=>activity[k]).length;
     $("typingMonthSummary").textContent=monthLabel+" · 已采集统计 "+recordedDays+" 天 · 章节修改 "+activityDays+" 天";
