@@ -195,6 +195,12 @@ body.editing-entry #editorView{min-height:100dvh;display:block;padding:calc(8px 
 .chapter-order-btn:active{transform:scale(.94)}
 .chapter-title-row{align-items:center;flex-wrap:wrap;gap:5px 8px}
 .chapter-title-row .writer-title{flex:1 1 180px}
+.chapter-title-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex:0 1 auto;max-width:100%;margin-left:auto}
+.chapter-title-actions #addVolumeButton{font-size:11px;padding:5px 8px;white-space:nowrap}
+.chapter-title-actions .work-elements-toolbar{margin-left:0}
+.volume-assignment-label{display:block;font-size:12px;font-weight:650;color:var(--ink);margin-bottom:7px}
+@media(max-width:620px){.chapter-title-actions{flex-wrap:wrap;justify-content:flex-start;margin-left:0;max-width:100%}}
+
 .chapter-title-row .work-elements-toolbar{flex:0 1 auto;max-width:100%;margin-left:auto;flex-wrap:wrap;gap:3px}
 .chapter-title-row .work-elements-toolbar .small-btn{font-size:10px;padding:4px 6px}
 @media(max-width:620px){.chapter-title-row .writer-title{flex-basis:100%}.chapter-title-row .work-elements-toolbar{margin-left:0;max-width:100%;justify-content:flex-start}}
@@ -532,7 +538,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
       <aside class="writer-side">
         <div class="section-head" style="margin-top:0"><div><h3 id="chapterGroupHeading">章节导航</h3><p class="subtle" id="chapterNavCurrent" style="margin:4px 0 0">当前作品</p></div></div>
         <button type="button" class="primary small-btn" id="createChapterSide" style="width:100%;margin:0 0 10px">＋ 新建章节</button>
-        <div class="volume-controls"><div class="volume-controls-head"><label for="chapterVolumeSelect">章节所属卷</label><button type="button" class="secondary small-btn" id="addVolumeButton">＋ 新建卷</button></div><select id="chapterVolumeSelect" class="text-input" aria-label="设置当前章节所属卷"><option value="">不分卷</option></select><p class="volume-help">可选择所属卷，也可以保持「不分卷」。</p></div>
+        <div class="volume-controls"><label class="volume-assignment-label" for="chapterVolumeSelect">章节所属卷</label><select id="chapterVolumeSelect" class="text-input" aria-label="设置当前章节所属卷"><option value="">不分卷</option></select><p class="volume-help">可选择所属卷，也可以保持「不分卷」。</p></div>
         <div id="chapterList" class="chapter-list"><div class="writer-empty">先创建或选择一部作品。</div></div>
         
       </aside>
@@ -541,7 +547,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
         
         <div id="writerEmpty" class="empty writer-empty-start"><div class="empty-icon">✒</div><strong>开始写作</strong><p>当前作品还没有章节。请在左侧章节导航中点击「新建章节」开始写作。</p></div>
         <div id="chapterEditor" class="hidden">
-          <div class="chapter-title-row"><input id="chapterTitle" class="text-input writer-title" maxlength="120" placeholder="章节标题，例如：第一章 初见" aria-label="章节标题"><div class="work-elements-toolbar" id="workElementsToolbar" aria-label="作品设定标签"></div></div><form id="addWorkElementForm" class="add-work-element-form hidden"><input id="newWorkElementTitle" class="text-input" maxlength="40" placeholder="输入新标签名称，例如：伏笔、时间线" aria-label="新标签名称" required><div class="add-work-element-actions"><button type="button" class="secondary small-btn" id="cancelAddWorkElement">取消</button><button type="submit" class="primary small-btn">添加</button></div></form>
+          <div class="chapter-title-row"><input id="chapterTitle" class="text-input writer-title" maxlength="120" placeholder="章节标题，例如：第一章 初见" aria-label="章节标题"><div class="chapter-title-actions"><button type="button" class="secondary small-btn" id="addVolumeButton">＋ 新建卷</button><div class="work-elements-toolbar" id="workElementsToolbar" aria-label="作品设定标签"></div></div></div><form id="addWorkElementForm" class="add-work-element-form hidden"><input id="newWorkElementTitle" class="text-input" maxlength="40" placeholder="输入新标签名称，例如：伏笔、时间线" aria-label="新标签名称" required><div class="add-work-element-actions"><button type="button" class="secondary small-btn" id="cancelAddWorkElement">取消</button><button type="submit" class="primary small-btn">添加</button></div></form>
           <div class="writer-toolbar"><span class="writer-status" id="writerSaveStatus">自动保存已开启</span></div>
           <div class="chapter-body-wrap"><textarea id="chapterBody" class="editor-area chapter-area" placeholder="从这里开始写正文……" spellcheck="true"></textarea><span class="chapter-body-count" id="chapterWordCount">0 字</span></div>
           <div class="writer-toolbar"><button class="danger small-btn" id="deleteChapter">删除本章</button><span class="writer-status">内容保存在当前浏览器</span></div>
