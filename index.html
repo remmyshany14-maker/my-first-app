@@ -642,6 +642,11 @@ body:has(#typingHistoryView.active) .typing-history-page{max-width:none!importan
     body.writing-active .chapter-body-wrap{width:100%;min-height:0}
   }
   @media(max-width:620px){.chapter-list{padding-left:0;padding-right:0}.chapter-volume-group{padding:4px 5px 8px}.volume-rename-hint{display:none}.chapter-item{min-height:50px;padding-right:42px}.chapter-drag-handle{right:6px}.chapter-volume-heading{touch-action:pan-y}.volume-drag-grip,.chapter-drag-handle{width:30px;height:32px}}
+  /* The editor is the primary workspace; keep the former middle chapter panel out of the layout. */
+  body.writing-active #writerLayout{display:block!important;min-height:0!important}
+  body.writing-active #writerLayout .writer-side,body.writing-active #writerLayout .writer-resizer{display:none!important}
+  body.writing-active #writerLayout .writer-main{display:flex!important;width:100%!important;max-width:none!important;grid-column:auto!important;grid-row:auto!important;border-radius:17px!important;min-height:calc(100dvh - 130px)!important}
+  @media(max-width:699px){body.writing-active #writerLayout .writer-main{min-height:calc(100dvh - 112px)!important;padding:12px 8px 24px!important;border-radius:13px!important}}
 </style>
 </head>
 <body>
