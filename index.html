@@ -1126,7 +1126,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
     $("typingHistoryEmpty").hidden=recordedDays>0||activityDays>0;
   }
   function actualTitleSafe(value){return String(value).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
-  let typingLastInputAt=0,typingLastLength=0;
+  let typingLastInputAt=0,typingLastLength=0,typingSecondsSinceSave=0;
   function recordTypingInput(){
     const area=$("chapterBody"),now=Date.now(),value=area.value;
     if(typingLastLength<0)typingLastLength=0;
@@ -1138,7 +1138,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
     if(activeView==="typingHistoryView")renderTypingHistory();
   }
   let typingPreviousValue="";
-  setInterval(()=>{if(!typingLastInputAt)return;const area=$("chapterBody"),now=Date.now();if(document.activeElement!==area||!currentChapter()||now-typingLastInputAt>60000)return;const d=dayStats();d.typingSeconds=(d.typingSeconds||0)+1;if(now-typingLastInputAt<=15000)d.focusSeconds=(d.focusSeconds||0)+1;saveWritingData();if(activeView==="typingHistoryView")renderTypingHistory()},1000);
+  setInterval(()=>{if(!typingLastInputAt)return;const area=$("chapterBody"),now=Date.now();if(document.activeElement!==area||!currentChapter()||now-typingLastInputAt>60000)return;const d=dayStats();d.typingSeconds=(d.typingSeconds||0)+1;if(now-typingLastInputAt<=15000)d.focusSeconds=(d.focusSeconds||0)+1;typingSecondsSinceSave++;if(typingSecondsSinceSave>=10){typingSecondsSinceSave=0;saveWritingData()}if(activeView==="typingHistoryView")renderTypingHistory()},1000);
   function createWork(){$("newWorkTitle").value="";$("workModal").classList.remove("hidden");$("newWorkTitle").focus()} function submitCreateWork(event){event.preventDefault();const title=$("newWorkTitle").value.trim();if(!title)return toast("作品名称不能为空。");const w={id:uid(),title,chapters:[],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};writingData.works.unshift(w);activeWorkId=w.id;activeChapterId=null;writerScreen="chapters";saveWritingData();$("workModal").classList.add("hidden");renderWriter()}
   function createChapter(){const w=currentWork();if(!w)return toast("请先创建或选择一部作品。");flushWriterSave();const n=w.chapters.length+1;const c={id:uid(),title:"第"+n+"章",body:"",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};w.chapters.push(c);activeChapterId=c.id;saveWritingData();renderWriter();$("chapterTitle").focus()}
   function deleteCurrentChapter(){const w=currentWork(),c=currentChapter();if(!w||!c)return;if(!confirm("确定删除章节「"+(c.title||"未命名章节")+"」吗？删除后无法撤销。"))return;w.chapters=w.chapters.filter(x=>x.id!==c.id);activeChapterId=w.chapters[0]?.id||null;saveWritingData();renderWriter();toast("章节已删除")}
