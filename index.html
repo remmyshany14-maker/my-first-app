@@ -119,6 +119,13 @@ body.editing-entry #editorView{min-height:100dvh;display:block;padding:calc(8px 
  body.writing-active .app{margin:0!important}
  body.writing-active .topbar{display:none!important}
 }
+/* Give the chapter editor enough visible writing space for at least ~2,000 Chinese characters. */
+body.writing-active .chapter-body-wrap{flex:none!important;min-height:1900px!important}
+body.writing-active .chapter-body-wrap #chapterBody{flex:none!important;height:1900px!important;min-height:1900px!important}
+@media(max-width:760px){
+ body.writing-active .chapter-body-wrap{min-height:2600px!important}
+ body.writing-active .chapter-body-wrap #chapterBody{height:2600px!important;min-height:2600px!important}
+}
 /* In a specific work, keep the logo row and place chapter navigation/editor immediately below it. */
 body.writing-active #writerDetailHead{display:none!important}
 @media(min-width:761px){
