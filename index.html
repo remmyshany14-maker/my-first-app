@@ -119,6 +119,16 @@ body.editing-entry #editorView{min-height:100dvh;display:block;padding:calc(8px 
  body.writing-active .app{margin:0!important}
  body.writing-active .topbar{display:none!important}
 }
+/* Keep the chapter navigation panel compact instead of stretching to match the tall editor. */
+body.writing-active .writer-layout{align-items:start!important}
+body.writing-active .writer-side{height:auto!important;min-height:0!important;max-height:calc(100dvh - 100px)!important;align-self:start!important;overflow-y:auto!important}
+body.writing-active .writer-resizer{height:100%;min-height:240px!important;align-self:stretch!important}
+body.writing-active #chapterList{max-height:calc(100dvh - 250px)!important;overflow-y:auto!important;align-content:start}
+@media(max-width:760px){
+ body.writing-active .writer-layout{align-items:start!important}
+ body.writing-active .writer-side{max-height:none!important;min-height:0!important;height:auto!important;overflow:visible!important}
+ body.writing-active #chapterList{max-height:180px!important;overflow-y:auto!important}
+}
 /* Give the chapter editor enough visible writing space for at least ~2,000 Chinese characters. */
 body.writing-active .chapter-body-wrap{flex:none!important;min-height:1900px!important}
 body.writing-active .chapter-body-wrap #chapterBody{flex:none!important;height:1900px!important;min-height:1900px!important}
