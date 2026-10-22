@@ -159,6 +159,10 @@ body.writing-active .writer-side,body.writing-active .writer-main{box-shadow:non
 body.writing-active #chapterEditor{display:flex;flex:1;flex-direction:column;min-height:0}
 body.writing-active #chapterTitle{flex:0 0 auto;width:100%;font-size:clamp(20px,2vw,27px);line-height:1.45;padding:8px 2px 12px;margin-bottom:4px}
 body.writing-active #chapterBody{flex:1;width:100%;min-height:calc(100dvh - 220px);height:auto;resize:vertical;font-size:clamp(16px,1.2vw,18px);line-height:1.9;letter-spacing:.01em;padding:18px 20px;border-radius:10px;overflow-wrap:anywhere;white-space:pre-wrap}
+body.writing-active .chapter-body-wrap{position:relative;display:flex;flex:1;min-height:0;width:100%}
+body.writing-active .chapter-body-wrap #chapterBody{width:100%;padding-bottom:42px}
+.chapter-body-count{position:absolute;right:14px;bottom:10px;z-index:2;font-size:11px;line-height:1.4;color:var(--muted);pointer-events:none;background:transparent}
+
 body.writing-active .writer-toolbar{gap:8px;margin:8px 0}
 body.writing-active .writer-helper{display:none!important}
 body.writing-active .writer-empty{margin:auto}
@@ -439,8 +443,8 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
         <div id="writerEmpty" class="empty writer-empty-start"><div class="empty-icon">✒</div><strong>开始写作</strong><p>当前作品还没有章节。请在左侧章节导航中点击「新建章节」开始写作。</p></div>
         <div id="chapterEditor" class="hidden">
           <input id="chapterTitle" class="text-input writer-title" maxlength="120" placeholder="章节标题，例如：第一章 初见" aria-label="章节标题">
-          <div class="writer-toolbar"><span class="subtle" id="chapterWordCount">0 字</span><span class="writer-status" id="writerSaveStatus">自动保存已开启</span></div>
-          <textarea id="chapterBody" class="editor-area chapter-area" placeholder="从这里开始写正文……" spellcheck="true"></textarea>
+          <div class="writer-toolbar"><span class="writer-status" id="writerSaveStatus">自动保存已开启</span></div>
+          <div class="chapter-body-wrap"><textarea id="chapterBody" class="editor-area chapter-area" placeholder="从这里开始写正文……" spellcheck="true"></textarea><span class="chapter-body-count" id="chapterWordCount">0 字</span></div>
           <div class="writer-toolbar"><button class="danger small-btn" id="deleteChapter">删除本章</button><span class="writer-status">内容保存在当前浏览器</span></div>
         </div>
       </section>
