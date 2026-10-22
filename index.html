@@ -383,6 +383,8 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
 /* Tighten the header-to-content gap specifically on the typing-speed page. */
 body:has(#typingHistoryView.active) .topbar{min-height:0!important;height:auto!important;margin:0 0 2px!important;padding:5px 0 4px!important;border-bottom:0!important}
 body:has(#typingHistoryView.active) .typing-history-page{margin-top:0!important}
+/* Align the typing-speed dashboard with the same left content edge as the other views. */
+body:has(#typingHistoryView.active) .typing-history-page{max-width:none!important;width:100%!important;margin:0 0 100px!important}
 /* Restore the original app mark and name; keep the removed hamburger control hidden. */
 .topbar{display:flex!important;align-items:center!important;justify-content:flex-start!important;height:auto!important;min-height:58px!important;margin:0 0 22px!important;padding:18px 0 12px!important;border-bottom:1px solid #e7e8ec!important}
 .brand{display:flex!important;align-items:center!important;gap:10px!important}
