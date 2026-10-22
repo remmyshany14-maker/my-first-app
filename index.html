@@ -119,6 +119,26 @@ body.editing-entry #editorView{min-height:100dvh;display:block;padding:calc(8px 
  body.writing-active .app{margin:0!important}
  body.writing-active .topbar{display:none!important}
 }
+/* In a specific work, keep the logo row and place chapter navigation/editor immediately below it. */
+body.writing-active #writerDetailHead{display:none!important}
+@media(min-width:761px){
+ body.writing-active .topbar{display:flex!important;min-height:0!important;padding:0 0 10px!important;margin:0 0 4px!important}
+ body.writing-active .topbar .brand{display:flex!important;align-items:center!important;gap:10px!important;width:auto!important}
+ body.writing-active .topbar .brand .logo,
+ body.writing-active .topbar .brand h1,
+ body.writing-active .topbar .brand p{display:initial!important}
+ body.writing-active .topbar .brand h1{margin:0!important}
+ body.writing-active .topbar .brand p{margin:0!important}
+}
+@media(max-width:760px){
+ body.writing-active .topbar{display:flex!important;padding:10px 14px!important;margin:0!important;background:var(--bg)!important}
+ body.writing-active .topbar .brand{display:flex!important;align-items:center!important;gap:10px!important}
+ body.writing-active .topbar .brand .logo{display:flex!important}
+ body.writing-active .topbar .brand h1,
+ body.writing-active .topbar .brand p{display:block!important}
+ body.writing-active .topbar .brand h1{margin:0!important}
+ body.writing-active .topbar .brand p{margin:0!important}
+}
 /* Writing workspace: no repeated branding, compact margins, flexible chapter pane */
 body.writing-active .topbar{display:none!important}
 body.writing-active .app{width:100%!important;max-width:none!important;margin:0!important;padding:10px 12px calc(18px + env(safe-area-inset-bottom))!important}
@@ -407,7 +427,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
   
   <section id="writingView" class="view">
     <div class="writer-library" id="writerLibrary"><div class="library-heading"><h2>作品</h2><button class="primary" id="libraryCreateWork">＋ 新建作品</button></div><div class="work-grid" id="workGrid"></div></div>
-    <div class="writer-detail-head hidden" id="writerDetailHead"><button type="button" class="writer-back" id="backToWorks">‹ 作品</button><div class="writer-detail-name" id="writerDetailName"></div><div class="writer-top-actions"><button class="secondary small-btn" id="exportChapter" disabled>导出 TXT</button></div></div>
+    <div class="writer-detail-head hidden" id="writerDetailHead" aria-hidden="true"><div class="writer-detail-name" id="writerDetailName"></div><button class="secondary small-btn" id="exportChapter" disabled hidden>导出 TXT</button><button type="button" class="writer-back" id="backToWorks" hidden>‹ 作品</button></div>
     <div class="writer-layout hidden" id="writerLayout">
       <aside class="writer-side">
         <div class="section-head" style="margin-top:0"><div><h3 id="chapterGroupHeading">章节导航</h3><p class="subtle" id="chapterNavCurrent" style="margin:4px 0 0">当前作品</p></div></div>
