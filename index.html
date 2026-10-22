@@ -659,6 +659,8 @@ body:has(#typingHistoryView.active) .typing-history-page{max-width:none!importan
     if (!button) return;
     event.preventDefault();
     const id = button.dataset.view;
+    // Persist the current chapter before switching views; do not rely on a pending debounce timer.
+    if(activeView==="writingView")flushWriterSave();
     if(id!==activeView&&activeView)viewHistory.push(activeView);activeView=id;
     // Clicking Works always returns to the works library, even from inside a work/chapter.
     if(id==="writingView"){writerScreen="library";document.body.classList.remove("focus-writing");}
@@ -1094,7 +1096,8 @@ body:has(#typingHistoryView.active) .typing-history-page{max-width:none!importan
   }
   function flushWriterSave(){if(writerSaveTimer){clearTimeout(writerSaveTimer);writerSaveTimer=null;saveCurrentChapter()}}
   function saveCurrentChapter(){const c=currentChapter();if(!c)return;c.title=$("chapterTitle").value.trim();c.body=$("chapterBody").value;c.updatedAt=new Date().toISOString();const w=currentWork();if(w){w.updatedAt=c.updatedAt;const def=getWorkElementDefs(w).find(d=>d.title.trim().toLocaleLowerCase()===c.title.trim().toLocaleLowerCase());if(def){setWorkElementValue(def,c.body,w);document.querySelectorAll("#workElementWindows .work-element-float").forEach(panel=>{if(panel.dataset.workId===w.id&&panel.dataset.elementId===def.id){const area=panel.querySelector("[data-element-notes]");if(area&&document.activeElement!==area)area.value=c.body;const status=panel.querySelector("[data-element-status]");if(status)status.textContent="已同步"}})}}saveWritingData();const btn=$("chapterList").querySelector('[data-chapter="'+CSS.escape(c.id)+'"]');if(btn){const title=btn.querySelector(".chapter-item-title");if(title)title.textContent=c.title||("第"+(w.chapters.findIndex(x=>x.id===c.id)+1)+"章 未命名");const count=btn.querySelector(".chapter-item-count");if(count)count.textContent=[...(c.body||"")].length.toLocaleString("zh-CN")+" 字";}}
-  function queueWriterSave(){updateWriterCount();$("writerSaveStatus").textContent="正在保存…";if(writerSaveTimer)clearTimeout(writerSaveTimer);writerSaveTimer=setTimeout(()=>{writerSaveTimer=null;saveCurrentChapter()},450)}
+  function persistChapterDraft(){const c=currentChapter();if(!c)return false;const body=$("chapterBody").value;c.body=body;const w=currentWork();if(w){c.updatedAt=new Date().toISOString();w.updatedAt=c.updatedAt}const ok=saveWritingData();const btn=$("chapterList").querySelector('[data-chapter="'+CSS.escape(c.id)+'"] .chapter-item-count');if(btn)btn.textContent=[...body].length.toLocaleString("zh-CN")+" 字";return ok}
+  function queueWriterSave(){updateWriterCount();$("writerSaveStatus").textContent="正在保存…";if(writerSaveTimer)clearTimeout(writerSaveTimer);persistChapterDraft();writerSaveTimer=setTimeout(()=>{writerSaveTimer=null;saveCurrentChapter()},450)}
   function updateWriterCount(){const count=[...$("chapterBody").value].length;$("chapterWordCount").textContent=count.toLocaleString("zh-CN")+" 字";const btn=$("chapterList").querySelector('[data-chapter="'+CSS.escape(activeChapterId||"")+'"] .chapter-item-count');if(btn)btn.textContent=count.toLocaleString("zh-CN")+" 字"}
   // Writing statistics are stored alongside writing data so they follow the existing cloud-sync path.
   function mergeTypingStats(target,source){
