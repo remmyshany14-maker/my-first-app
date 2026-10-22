@@ -1103,7 +1103,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
     const max=Math.max(1,...keys.map(k=>days[k]?.chars||0));
     $("typingChart").innerHTML=keys.map(k=>{const n=days[k]?.chars||0,ratio=n?Math.max(3,Math.round(n/max*100)):3;return '<div class="typing-chart-day" title="'+k+'：'+n.toLocaleString("zh-CN")+' 字"><span class="typing-chart-value">'+(n? n.toLocaleString("zh-CN"):"0")+'</span><div class="typing-chart-track"><div class="typing-chart-bar'+(n?"":" is-zero")+'" style="height:'+ratio+'%"></div></div><span class="typing-chart-date">'+k.slice(5).replace("-","/")+'</span></div>'}).join("");
     const rows=keys.slice().reverse();
-    $("typingHistoryRows").innerHTML=rows.map(k=>{const d=days[k],sp=d.typingSeconds?Math.round((d.chars||0)/(d.typingSeconds/60)):0;return '<tr><td>'+k+'</td><td>'+((d.chars||0).toLocaleString("zh-CN"))+' 字</td><td>'+formatTypingTime(d.typingSeconds)+'</td><td>'+formatTypingTime(d.focusSeconds)+'</td><td>'+sp.toLocaleString("zh-CN")+' 字/分</td></tr>'}).join("");
+    $("typingHistoryRows").innerHTML=rows.map(k=>{const d=days[k]||{chars:0,typingSeconds:0,focusSeconds:0},sp=d.typingSeconds?Math.round((d.chars||0)/(d.typingSeconds/60)):0;return '<tr><td>'+k+'</td><td>'+((d.chars||0).toLocaleString("zh-CN"))+' 字</td><td>'+formatTypingTime(d.typingSeconds)+'</td><td>'+formatTypingTime(d.focusSeconds)+'</td><td>'+sp.toLocaleString("zh-CN")+' 字/分</td></tr>'}).join("");
     $("typingHistoryEmpty").hidden=rows.length>0;
   }
   let typingLastInputAt=0,typingLastLength=0;
