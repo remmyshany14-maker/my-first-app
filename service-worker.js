@@ -1,4 +1,4 @@
-const CACHE_NAME = "lingganriji-v35";
+const CACHE_NAME = "lingganriji-v36";
 const APP_FILES = ["./", "./index.html", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", (event) => {
