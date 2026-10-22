@@ -363,6 +363,10 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
 }
 
   
+/* Compact live writing metrics in the fourth navigation slot, inspired by Yuewen's writing assistant. */
+.nav-btn[data-view="typingHistoryView"] .live-typing-label{display:block!important;white-space:pre-line!important;text-align:center;font-size:10px!important;line-height:1.35!important;font-weight:600!important;color:inherit!important;max-width:74px;overflow-wrap:anywhere}
+@media(min-width:900px){.nav-btn[data-view="typingHistoryView"]{gap:4px!important}.nav-btn[data-view="typingHistoryView"] .live-typing-label{font-size:9px!important;max-width:68px}}
+@media(max-width:899px){.bottom-nav .nav-btn[data-view="typingHistoryView"]{min-width:76px!important}.bottom-nav .nav-btn[data-view="typingHistoryView"] .live-typing-label{font-size:9px!important}}
 /* Final minimal pass: remove all in-app branding and the sidebar toggle; keep a fixed, balanced icon rail. */
 .topbar,.logo,.brand h1,.brand p,.bottom-nav:before,.sidebar-toggle{display:none!important}
 @media(min-width:900px){
@@ -609,7 +613,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
   <button type="button" class="nav-btn active" data-view="homeView"><span class="nav-icon">⌂</span><span>首页</span></button>
   <button type="button" class="nav-btn" data-view="writingView"><span class="nav-icon">✎</span><span>作品</span></button>
   <button type="button" class="nav-btn" data-view="listView"><span class="nav-icon">▤</span><span>全部记录</span></button>
-  <button type="button" class="nav-btn" data-view="typingHistoryView"><span class="nav-icon">◷</span><span>历史记录</span></button>
+  <button type="button" class="nav-btn" data-view="typingHistoryView" aria-label="历史记录；写作时显示当前打字速度和正文字符数"><span class="nav-icon">◷</span><span class="live-typing-label" id="liveTypingNavLabel">0 字/分<br>0 字</span></button>
 </nav>
 <div class="sidebar-resizer" id="sidebarResizer" role="separator" aria-label="调整侧栏宽度" tabindex="0"></div>
 <div class="notice" id="notice" role="status" aria-live="polite" hidden></div>
@@ -1013,7 +1017,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
     $("chapterList").querySelectorAll("[data-volume-drag]").forEach(head=>head.addEventListener("dblclick",e=>{if(e.target.closest("button"))return;e.preventDefault();e.stopPropagation();renameWorkVolume(head.dataset.volumeDrag)}));
     $("chapterList").querySelectorAll("[data-chapter]").forEach(btn=>{btn.addEventListener("click",e=>{if(e.target.closest("[data-chapter-drag], [data-delete-chapter]"))return;if(skipNextChapterClick){skipNextChapterClick=false;return}flushWriterSave();activeChapterId=btn.dataset.chapter;renderWriter()});btn.addEventListener("keydown",e=>{if(e.target!==btn)return;if(e.key==="Enter"||e.key===" "){e.preventDefault();flushWriterSave();activeChapterId=btn.dataset.chapter;renderWriter()}})});
     if(w){bindChapterReordering(w);bindVolumeReordering(w);}
-    const c=currentChapter();if(c){$("chapterTitle").value=c.title||"";$("chapterBody").value=c.body||"";typingPreviousValue=$("chapterBody").value;typingLastLength=typingPreviousValue.length;typingLastInputAt=0;updateWriterCount()}else{$("chapterTitle").value="";$("chapterBody").value="";typingPreviousValue="";typingLastLength=0;typingLastInputAt=0;$("chapterWordCount").textContent="0 字";$("writerSaveStatus").textContent=""}
+    const c=currentChapter();if(c){$("chapterTitle").value=c.title||"";$("chapterBody").value=c.body||"";typingPreviousValue=$("chapterBody").value;typingLastLength=typingPreviousValue.length;typingLastInputAt=0;typingSessionStartAt=0;typingSessionChars=0;updateWriterCount();updateLiveTypingNav()}else{$("chapterTitle").value="";$("chapterBody").value="";typingPreviousValue="";typingLastLength=0;typingLastInputAt=0;typingSessionStartAt=0;typingSessionChars=0;$("chapterWordCount").textContent="0 字";updateLiveTypingNav();$("writerSaveStatus").textContent=""}
     
   }
   function bindVolumeReordering(work){const list=$("chapterList");let timer=null,dragId=null,targetId=null,insertAfter=false;const clear=()=>{if(timer){clearTimeout(timer);timer=null}list.querySelectorAll(".volume-drop-before,.volume-drop-after").forEach(el=>el.classList.remove("volume-drop-before","volume-drop-after"))};list.querySelectorAll("[data-volume-drag]").forEach(head=>{head.addEventListener("pointerdown",e=>{if(e.button!==undefined&&e.button!==0)return;if(!e.target.closest("[data-volume-drag-handle]"))return;clear();dragId=null;targetId=null;const id=head.dataset.volumeDrag;try{e.target.closest("[data-volume-drag-handle]").setPointerCapture(e.pointerId)}catch(_){}timer=setTimeout(()=>{timer=null;dragId=id;head.classList.add("volume-dragging")},260)});head.addEventListener("pointermove",e=>{if(!dragId)return;const target=document.elementFromPoint(e.clientX,e.clientY)?.closest("#chapterList [data-volume-drag]");list.querySelectorAll(".volume-drop-before,.volume-drop-after").forEach(el=>el.classList.remove("volume-drop-before","volume-drop-after"));targetId=null;if(!target||target.dataset.volumeDrag===dragId)return;const r=target.getBoundingClientRect();insertAfter=e.clientY>r.top+r.height/2;targetId=target.dataset.volumeDrag;target.classList.add(insertAfter?"volume-drop-after":"volume-drop-before")});const finish=()=>{clear();if(dragId){const from=work.volumes.findIndex(v=>v.id===dragId),to=work.volumes.findIndex(v=>v.id===targetId);if(from>=0&&to>=0){const [v]=work.volumes.splice(from,1);let pos=work.volumes.findIndex(x=>x.id===targetId);if(insertAfter)pos++;work.volumes.splice(pos,0,v);saveWritingData();renderWriter()}}list.querySelectorAll(".volume-dragging").forEach(el=>el.classList.remove("volume-dragging"));dragId=null;targetId=null};head.addEventListener("pointerup",finish);head.addEventListener("pointercancel",finish)})}
@@ -1129,19 +1133,27 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
     $("typingHistoryEmpty").hidden=recordedDays>0||activityDays>0;
   }
   function actualTitleSafe(value){return String(value).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
-  let typingLastInputAt=0,typingLastLength=0,typingSecondsSinceSave=0;
+  let typingLastInputAt=0,typingLastLength=0,typingSecondsSinceSave=0,typingSessionStartAt=0,typingSessionChars=0;
+  function updateLiveTypingNav(){
+    const label=$("liveTypingNavLabel"),area=$("chapterBody");if(!label)return;
+    const chars=area?[...area.value].length:0,now=Date.now();
+    const speed=typingLastInputAt&&now-typingLastInputAt<=10000&&typingSessionStartAt?Math.round(typingSessionChars/Math.max(1,(now-typingSessionStartAt)/60000)):0;
+    label.textContent=speed.toLocaleString("zh-CN")+" 字/分\\n"+chars.toLocaleString("zh-CN")+" 字";
+    label.title="当前打字速度（本次编辑会话估算）与当前章节正文字符数";
+  }
   function recordTypingInput(){
     const area=$("chapterBody"),now=Date.now(),value=area.value;
     if(typingLastLength<0)typingLastLength=0;
     let prefix=0;while(prefix<typingLastLength&&prefix<value.length&&typingPreviousValue[prefix]===value[prefix])prefix++;
     let suffix=0;while(suffix<typingLastLength-prefix&&suffix<value.length-prefix&&typingPreviousValue[typingPreviousValue.length-1-suffix]===value[value.length-1-suffix])suffix++;
     const inserted=Math.max(0,value.length-prefix-suffix);
-    if(inserted){dayStats().chars+=inserted;saveWritingData()}
-    typingPreviousValue=value;typingLastLength=value.length;typingLastInputAt=now;
+    if(inserted){dayStats().chars+=inserted;saveWritingData();if(!typingSessionStartAt)typingSessionStartAt=now;typingSessionChars+=inserted}
+    typingPreviousValue=value;typingLastLength=value.length;typingLastInputAt=now;updateLiveTypingNav();
     if(activeView==="typingHistoryView")renderTypingHistory();
   }
   let typingPreviousValue="";
-  setInterval(()=>{if(!typingLastInputAt)return;const area=$("chapterBody"),now=Date.now();if(document.activeElement!==area||!currentChapter()||now-typingLastInputAt>60000)return;const d=dayStats();d.typingSeconds=(d.typingSeconds||0)+1;if(now-typingLastInputAt<=15000)d.focusSeconds=(d.focusSeconds||0)+1;typingSecondsSinceSave++;if(typingSecondsSinceSave>=10){typingSecondsSinceSave=0;saveWritingData()}if(activeView==="typingHistoryView")renderTypingHistory()},1000);
+  setInterval(()=>{if(!typingLastInputAt)return;const area=$("chapterBody"),now=Date.now();if(document.activeElement!==area||!currentChapter()||now-typingLastInputAt>60000)return;const d=dayStats();d.typingSeconds=(d.typingSeconds||0)+1;if(now-typingLastInputAt<=15000)d.focusSeconds=(d.focusSeconds||0)+1;typingSecondsSinceSave++;if(typingSecondsSinceSave>=10){typingSecondsSinceSave=0;saveWritingData()}updateLiveTypingNav();if(activeView==="typingHistoryView")renderTypingHistory()},1000);
+  setInterval(updateLiveTypingNav,1000);
   function createWork(){$("newWorkTitle").value="";$("workModal").classList.remove("hidden");$("newWorkTitle").focus()} function submitCreateWork(event){event.preventDefault();const title=$("newWorkTitle").value.trim();if(!title)return toast("作品名称不能为空。");const w={id:uid(),title,chapters:[],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};writingData.works.unshift(w);activeWorkId=w.id;activeChapterId=null;writerScreen="chapters";saveWritingData();$("workModal").classList.add("hidden");renderWriter()}
   function createChapter(){const w=currentWork();if(!w)return toast("请先创建或选择一部作品。");flushWriterSave();const n=w.chapters.length+1;const c={id:uid(),title:"第"+n+"章",body:"",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};w.chapters.push(c);activeChapterId=c.id;saveWritingData();renderWriter();$("chapterTitle").focus()}
   function deleteCurrentChapter(){const w=currentWork(),c=currentChapter();if(!w||!c)return;if(!confirm("确定删除章节「"+(c.title||"未命名章节")+"」吗？删除后无法撤销。"))return;w.chapters=w.chapters.filter(x=>x.id!==c.id);activeChapterId=w.chapters[0]?.id||null;saveWritingData();renderWriter();toast("章节已删除")}
