@@ -312,13 +312,11 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
     @media(max-width:699px){.writer-library{margin:16px -1px 24px}.library-heading{margin-bottom:16px}.work-grid{gap:14px;padding:6px 4px 16px}.work-card{flex-basis:132px;width:132px;min-width:132px;height:212px;min-height:212px;padding:16px 11px 14px 19px}.work-card-title{font-size:15px}.bottom-nav{justify-content:space-evenly;gap:0}.nav-btn{min-width:76px}}
 
     /* Writing workspace: centered page with an optional slide-out chapter navigator. */
-    #writerLayout{position:relative;display:block!important;min-height:calc(100dvh - 170px);width:100%;margin:8px 0 20px}
-    #writerLayout .writer-side{position:fixed;z-index:410;left:0;top:0;bottom:0;width:min(300px,84vw);height:100dvh;min-height:0;max-height:none;padding:calc(18px + env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom));overflow:auto;background:#fff;border:1px solid #eee9f5;border-radius:0 18px 18px 0;box-shadow:0 12px 42px #21183d20;transform:translateX(-110%);visibility:hidden;transition:transform .2s ease,visibility .2s;grid-column:auto;grid-row:auto}
-    #writerLayout.writer-nav-open .writer-side{transform:translateX(0);visibility:visible}
-    #writerLayout.writer-nav-open::before{content:"";position:fixed;inset:0;z-index:400;background:#20193666}
-    #writerLayout .writer-resizer{display:none!important}
-    #writerLayout .writer-main{display:flex;flex-direction:column;width:100%;max-width:none;min-width:0;min-height:calc(100dvh - 190px);margin:0 auto;padding:clamp(14px,3vw,32px) clamp(16px,5vw,52px);border:0;border-radius:0;background:transparent;box-shadow:none;grid-column:auto;grid-row:auto}
-    #chapterEditor{width:100%;max-width:900px;margin:0 auto}
+    #writerLayout{position:relative;display:grid!important;grid-template-columns:minmax(175px,var(--writer-sidebar-width,250px)) 12px minmax(0,1fr);gap:0;align-items:stretch;min-height:calc(100dvh - 170px);width:100%;margin:8px 0 20px}
+#writerLayout .writer-side{position:relative;z-index:1;left:auto;top:auto;bottom:auto;width:auto;height:auto;min-height:calc(100dvh - 170px);padding:16px 12px;overflow:auto;background:#fff;border:1px solid #eee9f5;border-radius:12px 0 0 12px;box-shadow:none;transform:none;visibility:visible;transition:none;grid-column:1;grid-row:1}
+#writerLayout .writer-resizer{display:block!important;grid-column:2;grid-row:1;width:12px;min-height:calc(100dvh - 170px);cursor:col-resize;touch-action:none;position:relative;z-index:20;align-self:stretch}
+#writerLayout .writer-main{display:flex;flex-direction:column;grid-column:3;grid-row:1;width:100%;max-width:none;min-width:0;min-height:calc(100dvh - 190px);margin:0;padding:clamp(14px,3vw,32px);border:1px solid #eee9f5;border-radius:0 12px 12px 0;background:#fff;box-shadow:none}
+     #chapterEditor{width:100%;max-width:900px;margin:0 auto}
     #chapterEditor .writer-title{width:100%;border:0;border-bottom:1px solid #eee9f5;border-radius:0;background:transparent;box-shadow:none;padding:12px 0 16px;font-size:clamp(23px,3vw,30px)}
     #chapterEditor .chapter-area{width:100%;min-height:calc(100dvh - 310px);resize:vertical;border:0!important;border-radius:0!important;padding:18px 0;background:transparent!important;box-shadow:none!important;font-size:17px;line-height:2;outline:none}
     #chapterEditor .chapter-area:focus{outline:none!important}
@@ -330,11 +328,13 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
     #writerDetailHead{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:10px 0;background:var(--bg);border-bottom:1px solid #eee9f5}
     #writerDetailHead .writer-detail-name{flex:1;min-width:0;font-weight:700;text-align:center}
     #writerDetailHead .writer-top-actions{flex:0 0 auto}
-    #writerDetailHead #chapterNavToggle,#writerDetailHead #exportChapter{white-space:nowrap}
+    #writerDetailHead #exportChapter{white-space:nowrap}
     @media(max-width:620px){
-      #writerLayout{min-height:calc(100dvh - 140px);margin-top:0}
-      #writerLayout .writer-main{min-height:calc(100dvh - 160px);padding:10px 16px 28px}
-      #chapterEditor .chapter-area{min-height:calc(100dvh - 280px);font-size:16px;padding:12px 0}
+      #writerLayout{display:grid!important;grid-template-columns:1fr;gap:8px;min-height:calc(100dvh - 140px);margin-top:0}
+#writerLayout .writer-side{grid-column:1;grid-row:1;position:relative;left:auto;top:auto;bottom:auto;width:100%;height:auto;min-height:0;max-height:190px;padding:10px;overflow:auto;border-radius:12px;transform:none;visibility:visible;background:#fff;box-shadow:none}
+#writerLayout .writer-resizer{display:none!important}
+#writerLayout .writer-main{grid-column:1;grid-row:2;min-height:calc(100dvh - 300px);padding:10px 16px 28px;border-radius:12px}
+       #chapterEditor .chapter-area{min-height:calc(100dvh - 280px);font-size:16px;padding:12px 0}
       #writerEmpty.writer-empty-start{min-height:calc(100dvh - 230px)}
       #writerDetailHead{gap:7px;padding:8px 0}
       #writerDetailHead .writer-back{padding:7px 9px;white-space:nowrap}
@@ -407,10 +407,10 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
   
   <section id="writingView" class="view">
     <div class="writer-library" id="writerLibrary"><div class="library-heading"><h2>作品</h2><button class="primary" id="libraryCreateWork">＋ 新建作品</button></div><div class="work-grid" id="workGrid"></div></div>
-    <div class="writer-detail-head hidden" id="writerDetailHead"><button type="button" class="writer-back" id="backToWorks">‹ 作品</button><div class="writer-detail-name" id="writerDetailName"></div><div class="writer-top-actions"><button type="button" class="secondary small-btn" id="chapterNavToggle" aria-expanded="false">☰ 章节导航</button><button class="secondary small-btn" id="exportChapter" disabled>导出 TXT</button></div></div>
+    <div class="writer-detail-head hidden" id="writerDetailHead"><button type="button" class="writer-back" id="backToWorks">‹ 作品</button><div class="writer-detail-name" id="writerDetailName"></div><div class="writer-top-actions"><button class="secondary small-btn" id="exportChapter" disabled>导出 TXT</button></div></div>
     <div class="writer-layout hidden" id="writerLayout">
       <aside class="writer-side">
-        <div class="section-head" style="margin-top:0"><div><h3 id="chapterGroupHeading">章节导航</h3><p class="subtle" id="chapterNavCurrent" style="margin:4px 0 0">当前作品</p></div><button type="button" class="secondary small-btn" id="closeChapterNav" aria-label="关闭章节导航">×</button></div>
+        <div class="section-head" style="margin-top:0"><div><h3 id="chapterGroupHeading">章节导航</h3><p class="subtle" id="chapterNavCurrent" style="margin:4px 0 0">当前作品</p></div></div>
         <button type="button" class="primary small-btn" id="createChapterSide" style="width:100%;margin:0 0 10px">＋ 新建章节</button>
         <div id="chapterList" class="chapter-list"><div class="writer-empty">先创建或选择一部作品。</div></div>
       </aside>
@@ -808,12 +808,8 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
     if(document.body.classList.contains("editing-entry")){
       document.body.classList.remove("editing-entry");
       const target=viewHistory.pop()||"listView";activeView=target;showView(target);return true;
-    }
-    if($("writerLayout")?.classList.contains("writer-nav-open")){
-      $("writerLayout").classList.remove("writer-nav-open");$("chapterNavToggle")?.setAttribute("aria-expanded","false");return true;
-    }
-    if(activeView==="writingView"&&writerScreen!=="library"){
-      flushWriterSave();writerScreen="library";document.body.classList.remove("focus-writing");$("writerLayout").classList.remove("writer-nav-open");renderWriter();return true;
+    }if(activeView==="writingView"&&writerScreen!=="library"){
+      flushWriterSave();writerScreen="library";document.body.classList.remove("focus-writing");renderWriter();return true;
     }
     if(activeView!=="homeView"){const target=viewHistory.pop()||"homeView";activeView=target;showView(target);return true}
     toast("已在首页");return true;
@@ -857,7 +853,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
     grid.querySelectorAll("[data-delete-work]").forEach(btn=>btn.addEventListener("click",e=>{e.stopPropagation();const w=writingData.works.find(x=>x.id===btn.dataset.deleteWork);if(!w||!confirm("确定删除作品「"+w.title+"」及其全部章节吗？此操作无法撤销。"))return;writingData.works=writingData.works.filter(x=>x.id!==w.id);if(activeWorkId===w.id){activeWorkId=null;activeChapterId=null}saveWritingData();renderWriter();toast("作品已删除")}));
     const w=currentWork();$("chapterGroupHeading").textContent="章节导航";$("chapterNavCurrent").textContent=w?(w.title+" · "+(currentChapter()?.title||"尚未创建章节")):"未选择作品";$("createChapterSide").disabled=!w;$("exportChapter").disabled=!currentChapter();$("writerEmpty").classList.toggle("hidden",!!currentChapter());$("chapterEditor").classList.toggle("hidden",!currentChapter());
     $("chapterList").innerHTML=w?(w.chapters.length?w.chapters.map((c,i)=>'<button class="chapter-item '+(c.id===activeChapterId?'active':'')+'" data-chapter="'+escapeHTML(c.id)+'">'+escapeHTML(c.title||("第"+(i+1)+"章 未命名"))+'</button>').join(""):'<div class="writer-empty">还没有章节</div>'):'<div class="writer-empty">先创建或选择一部作品</div>';
-    $("chapterList").querySelectorAll("[data-chapter]").forEach(btn=>btn.addEventListener("click",()=>{flushWriterSave();activeChapterId=btn.dataset.chapter;$("writerLayout").classList.remove("writer-nav-open");$("chapterNavToggle").setAttribute("aria-expanded","false");renderWriter()}));
+    $("chapterList").querySelectorAll("[data-chapter]").forEach(btn=>btn.addEventListener("click",()=>{flushWriterSave();activeChapterId=btn.dataset.chapter;renderWriter()}));
     const c=currentChapter();if(c){$("chapterTitle").value=c.title||"";$("chapterBody").value=c.body||"";updateWriterCount()}else{$("chapterTitle").value="";$("chapterBody").value="";$("chapterWordCount").textContent="0 字";$("writerSaveStatus").textContent="选择章节后开始写作"}
     
   }
@@ -869,7 +865,7 @@ body.resizing-writer-sidebar *{cursor:col-resize!important;user-select:none!impo
   function createChapter(){const w=currentWork();if(!w)return toast("请先创建或选择一部作品。");flushWriterSave();const n=w.chapters.length+1;const c={id:uid(),title:"第"+n+"章",body:"",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};w.chapters.push(c);activeChapterId=c.id;saveWritingData();renderWriter();$("chapterTitle").focus()}
   function deleteCurrentChapter(){const w=currentWork(),c=currentChapter();if(!w||!c)return;if(!confirm("确定删除章节「"+(c.title||"未命名章节")+"」吗？删除后无法撤销。"))return;w.chapters=w.chapters.filter(x=>x.id!==c.id);activeChapterId=w.chapters[0]?.id||null;saveWritingData();renderWriter();toast("章节已删除")}
   function exportCurrentChapter(){flushWriterSave();const w=currentWork(),c=currentChapter();if(!w||!c)return;downloadFile((w.title+"-"+(c.title||"未命名章节")+".txt").replace(/[\\/:*?"<>|]/g,"_"),(c.title?c.title+"\n\n":"")+(c.body||""),"text/plain;charset=utf-8");toast("章节 TXT 已导出")}
-  $("createWork")?.addEventListener("click",createWork);$("createChapterSide").addEventListener("click",createChapter);$("libraryCreateWork").addEventListener("click",createWork);$("backToWorks").addEventListener("click",()=>{flushWriterSave();writerScreen="library";document.body.classList.remove("focus-writing");renderWriter()});$("workForm").addEventListener("submit",submitCreateWork);$("cancelWork").addEventListener("click",()=>$("workModal").classList.add("hidden"));$("categoryForm").addEventListener("submit",submitEditorCategory);$("cancelEditorCategory").addEventListener("click",()=>$("categoryModal").classList.add("hidden"));$("categoryModal").addEventListener("click",e=>{if(e.target===$("categoryModal"))$("categoryModal").classList.add("hidden")});$("newEditorCategoryName").addEventListener("keydown",e=>{if(e.key==="Escape")$("categoryModal").classList.add("hidden")});$("workModal").addEventListener("click",e=>{if(e.target===$("workModal"))$("workModal").classList.add("hidden")});$("newWorkTitle").addEventListener("keydown",e=>{if(e.key==="Escape")$("workModal").classList.add("hidden")});$("chapterNavToggle").addEventListener("click",()=>{const open=$("writerLayout").classList.toggle("writer-nav-open");$("chapterNavToggle").setAttribute("aria-expanded",String(open))});$("closeChapterNav").addEventListener("click",()=>{$("writerLayout").classList.remove("writer-nav-open");$("chapterNavToggle").setAttribute("aria-expanded","false")});$("writerLayout").addEventListener("click",e=>{if(e.target===$("writerLayout")&&$("writerLayout").classList.contains("writer-nav-open")){$("writerLayout").classList.remove("writer-nav-open");$("chapterNavToggle").setAttribute("aria-expanded","false")}});$("deleteChapter").addEventListener("click",deleteCurrentChapter);$("exportChapter").addEventListener("click",exportCurrentChapter);$("chapterTitle").addEventListener("input",queueWriterSave);$("chapterBody").addEventListener("input",queueWriterSave);
+  $("createWork")?.addEventListener("click",createWork);$("createChapterSide").addEventListener("click",createChapter);$("libraryCreateWork").addEventListener("click",createWork);$("backToWorks").addEventListener("click",()=>{flushWriterSave();writerScreen="library";document.body.classList.remove("focus-writing");renderWriter()});$("workForm").addEventListener("submit",submitCreateWork);$("cancelWork").addEventListener("click",()=>$("workModal").classList.add("hidden"));$("categoryForm").addEventListener("submit",submitEditorCategory);$("cancelEditorCategory").addEventListener("click",()=>$("categoryModal").classList.add("hidden"));$("categoryModal").addEventListener("click",e=>{if(e.target===$("categoryModal"))$("categoryModal").classList.add("hidden")});$("newEditorCategoryName").addEventListener("keydown",e=>{if(e.key==="Escape")$("categoryModal").classList.add("hidden")});$("workModal").addEventListener("click",e=>{if(e.target===$("workModal"))$("workModal").classList.add("hidden")});$("newWorkTitle").addEventListener("keydown",e=>{if(e.key==="Escape")$("workModal").classList.add("hidden")});$("deleteChapter").addEventListener("click",deleteCurrentChapter);$("exportChapter").addEventListener("click",exportCurrentChapter);$("chapterTitle").addEventListener("input",queueWriterSave);$("chapterBody").addEventListener("input",queueWriterSave);
   window.addEventListener("beforeunload",flushWriterSave);
 
   function initSidebar(){if(window.innerWidth<900)return;const widthKey="lingganriji-sidebar-width-v2",collapsedKey="lingganriji-sidebar-collapsed-v1";let width=Number(localStorage.getItem(widthKey))||84;const applyWidth=()=>{width=Math.max(72,Math.min(112,width));document.documentElement.style.setProperty("--sidebar-width",width+"px")};applyWidth();if(localStorage.getItem(collapsedKey)==="1")document.body.classList.add("sidebar-collapsed");$("sidebarToggle")?.addEventListener("click",()=>{document.body.classList.toggle("sidebar-collapsed");localStorage.setItem(collapsedKey,document.body.classList.contains("sidebar-collapsed")?"1":"0")})}
